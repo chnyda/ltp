@@ -96,6 +96,8 @@ if [ "$SYBSYSCOMPILED" = "" ];then	# Warning and exit if all cgroup subsystem ar
 	exit -2;
 fi
 
+export SYBSYSCOMPILED
+
 CASETYPE=$1
 shift
 CASECMD=$@

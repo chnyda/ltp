@@ -146,10 +146,14 @@ case $subgroup_hiers in
     *) ;;
 esac
 
+if ! [[ $SYBSYSCOMPILED =~ $subsystem ]] ; then
+	exit 32
+fi
+
+
 ##########################  main   #######################
 
 setup;
-
 mount_cgroup;
 
 $TESTROOT/cgroup_fj_proc &
