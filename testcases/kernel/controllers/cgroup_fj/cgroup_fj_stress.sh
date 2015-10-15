@@ -215,6 +215,7 @@ else
 	for i in `seq 1 $subgroup_num`
 	do
 		get_subgroup_path1 $i
+		echo $cur_subgroup_path1
 		do_mkdir 1 1 $cur_subgroup_path1
 		if [ "$subsystem" == "cpuset" ] || [ "$subsystem" == "all" ] ; then
 			if [ "$exist_cpuset" != "" ]; then
