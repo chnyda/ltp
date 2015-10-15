@@ -506,7 +506,8 @@ cleanup()
 			fi
 		done
 		echo "here"
-		do_rmdir 0 1 /sys/fs/cgroup/subgroup_*
+		rm -rf /sys/fs/cgroup/subgroup_*
+		#do_rmdir 0 1 /sys/fs/cgroup/subgroup_*
 	fi
 
 	if [ -e $TMPFILE ]; then
