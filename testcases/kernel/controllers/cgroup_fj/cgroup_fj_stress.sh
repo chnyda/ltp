@@ -309,7 +309,7 @@ else
 	done
 fi
 
-do_rmdir 0 1 /sys/fs/cgroup/subgroup_*
+#do_rmdir 0 1 /sys/fs/cgroup/subgroup_*
 
 sleep 1
 
