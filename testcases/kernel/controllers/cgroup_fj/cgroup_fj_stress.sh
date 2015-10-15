@@ -299,7 +299,7 @@ else
 	*  )
 		;;
 	esac
-	ls /sys/fs/cgroup/subgroup_1
+	cat /sys/fs/cgroup/subgroup_1/tasks
 	reclaim_foundling;
 	for i in `seq 1 $count`
 	do
