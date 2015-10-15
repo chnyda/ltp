@@ -116,7 +116,7 @@ case $CASETYPE in
 "stress" )
 	: $(( CASENO2 += 1 ))
 	export CASENO2=$CASENO2
-	cgroup_fj_stress.sh $CASECMD
+	bash -x cgroup_fj_stress.sh $CASECMD
 	;;
 esac
 
