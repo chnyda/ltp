@@ -451,10 +451,10 @@ do_kill()
 
 setup()
 {
-	if [ -e /dev/cgroup ]; then
+	if [ -e /sys/fs/cgroup ]; then
 		cleanup;
 	fi
-	do_mkdir 1 1 /dev/cgroup
+	do_mkdir 1 1 /sys/fs/cgroup
 
 	if [ -e $TESTROOT/cgroup_fj_release_agent ]
 	then
@@ -493,47 +493,47 @@ cleanup()
 
 	killall -9 cgroup_fj_proc 1>/dev/null 2>&1;
 
-	if [ -e /dev/cgroup/subgroup_1 ]; then
-		cat /dev/cgroup/subgroup_1/tasks > $TMPFILE
+	if [ -e /sys/fs/cgroup/subgroup_1 ]; then
+		cat /sys/fs/cgroup/subgroup_1/tasks > $TMPFILE
 		nlines=`cat $TMPFILE | wc -l`
 		for i in `seq 1 $nlines`
 		do
 			cur_pid=`sed -n "$i""p" $TMPFILE`
 			if [ -e /proc/$cur_pid/ ];then
-				do_echo 0 1 "$cur_pid" /dev/cgroup/tasks
+				do_echo 0 1 "$cur_pid" /sys/fs/cgroup/tasks
 			fi
 		done
-		do_rmdir 0 1 /dev/cgroup/subgroup_*
+		do_rmdir 0 1 /sys/fs/cgroup/subgroup_*
 	fi
 
 	if [ -e $TMPFILE ]; then
 		rm -f $TMPFILE 2>/dev/null
 	fi
 
-	mount_str="`mount -l | grep /dev/cgroup`"
+	mount_str="`mount -l | grep /sys/fs/cgroup`"
 	if [ "$mount_str" != "" ]; then
-		do_umount 0 1 /dev/cgroup
+		do_umount 0 1 /sys/fs/cgroup
 	fi
 
-	if [ -e /dev/cgroup ]; then
-		do_rmdir 0 1 /dev/cgroup
+	if [ -e /sys/fs/cgroup ]; then
+		do_rmdir 0 1 /sys/fs/cgroup
 	fi
 }
 
 reclaim_foundling()
 {
-	if ! [ -e /dev/cgroup/subgroup_1 ]; then
+	if ! [ -e /sys/fs/cgroup/subgroup_1 ]; then
 		return
 	fi
 	foundlings=0
-	cat `find /dev/cgroup/subgroup_* -name "tasks"` > $TMPFILE
+	cat `find /sys/fs/cgroup/subgroup_* -name "tasks"` > $TMPFILE
 	nlines=`cat "$TMPFILE" | wc -l`
 	for k in `seq 1 $nlines`
 	do
 		cur_pid=`sed -n "$k""p" $TMPFILE`
 		if [ -e /proc/$cur_pid/ ];then
 			echo "ERROR: pid $cur_pid reclaimed"
-			do_echo 0 1 "$cur_pid" "/dev/cgroup/tasks"
+			do_echo 0 1 "$cur_pid" "/sys/fs/cgroup/tasks"
 			: $((foundlings += 1))
 		fi
 	done
@@ -545,12 +545,12 @@ reclaim_foundling()
 
 mkdir_subgroup()
 {
-	if ! [ -e /dev/cgroup ]; then
-		echo "ERROR: /dev/cgroup doesn't exist... Exiting test"
+	if ! [ -e /sys/fs/cgroup ]; then
+		echo "ERROR: /sys/fs/cgroup doesn't exist... Exiting test"
 		exit -1;
 	fi
 
-	do_mkdir 1 1 /dev/cgroup/subgroup_1
+	do_mkdir 1 1 /sys/fs/cgroup/subgroup_1
 }
 
 mount_cgroup ()
@@ -579,10 +579,10 @@ mount_cgroup ()
 	fi
 	if [ "$remount_use_str" != "" ]; then
 		if [ "$PARAMETER_O" != "" ]; then
-			do_mount 1 1 "-o$PARAMETER_O" /dev/cgroup
+			do_mount 1 1 "-o$PARAMETER_O" /sys/fs/cgroup
 			PARAMETER_O="$PARAMETER_O"",""$remount_use_str"
 		else
-			do_mount 1 1 "" /dev/cgroup
+			do_mount 1 1 "" /sys/fs/cgroup
 			PARAMETER_O="$remount_use_str"
 		fi
 		sleep 1
@@ -592,7 +592,7 @@ mount_cgroup ()
 		PARAMETER_O="-o""$PARAMETER_O"
 	fi
 
-	do_mount 1 $expected "$PARAMETER_O" /dev/cgroup
+	do_mount 1 $expected "$PARAMETER_O" /sys/fs/cgroup
 }
 
 check_para()
