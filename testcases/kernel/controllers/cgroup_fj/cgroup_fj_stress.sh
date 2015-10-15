@@ -305,11 +305,11 @@ else
 	do
 		j=i
 		let "j = $count - $j + 1"
-		#do_rmdir 1 1 ${pathes[$j]}
+		do_rmdir 1 1 ${pathes[$j]}
 	done
 fi
 
-#do_rmdir 0 1 /sys/fs/cgroup/cpu/subgroup_*
+do_rmdir 0 1 /sys/fs/cgroup/cpu/subgroup_*
 
 sleep 1
 
