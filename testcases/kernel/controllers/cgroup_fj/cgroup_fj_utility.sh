@@ -550,8 +550,8 @@ mkdir_subgroup()
 mount_cgroup ()
 {
 	grep cgroup /proc/mounts;
-	if [ $? -eq 0]; then
-		return 0;
+	if [ "$?" == "0" ]; then
+		return 0
 	fi
 	expected=1
 	PARAMETER_O="";
