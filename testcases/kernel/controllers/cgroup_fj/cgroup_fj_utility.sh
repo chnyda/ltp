@@ -307,6 +307,7 @@ do_mkdir()
 	fi
 
 	if [ $parents -ne "1" ] && [ -e $target ]; then
+		echo caca
 		do_rmdir $exit_here 1 $target
 	fi
 
@@ -503,6 +504,7 @@ cleanup()
 				do_echo 0 1 "$cur_pid" /sys/fs/cgroup/tasks
 			fi
 		done
+		echo "here"
 		do_rmdir 0 1 /sys/fs/cgroup/subgroup_*
 	fi
 
