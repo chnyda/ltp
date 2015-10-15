@@ -371,7 +371,7 @@ do_mount()
 		fi
 	fi
 
-	echo test
+	echo "test"
 	mount -t cgroup $para_o $something $target
 	do_exit $exit_here $expected $?;
 }
