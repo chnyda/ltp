@@ -509,15 +509,6 @@ cleanup()
 	if [ -e $TMPFILE ]; then
 		rm -f $TMPFILE 2>/dev/null
 	fi
-
-	mount_str="`mount -l | grep /sys/fs/cgroup`"
-	if [ "$mount_str" != "" ]; then
-		do_umount 0 1 /sys/fs/cgroup
-	fi
-
-	if [ -e /sys/fs/cgroup ]; then
-		do_rmdir 0 1 /sys/fs/cgroup
-	fi
 }
 
 reclaim_foundling()
