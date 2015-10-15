@@ -108,7 +108,7 @@ get_subgroup_path1()
 		return;
 	fi
 
-	cur_subgroup_path1="/sys/fs/cgroup/subgroup_$1/"
+	cur_subgroup_path1="/sys/fs/cgroup/cpu/subgroup_$1/"
 }
 
 
@@ -165,8 +165,8 @@ exist_cpuset=0
 exist_cpuset=`grep -w cpuset /proc/cgroups | cut -f1`;
 if [ "$subsystem" == "cpuset" ] || [ "$subsystem" == "all" ] ; then
 	if [ "$exist_cpuset" != "" ]; then
-		cpus=`cat /sys/fs/cgroup/cpuset.cpus`
-		mems=`cat /sys/fs/cgroup/cpuset.mems`
+		cpus=`cat /sys/fs/cgroup/cpu/cpuset.cpus`
+		mems=`cat /sys/fs/cgroup/cpu/cpuset.mems`
 	fi
 fi
 
@@ -176,8 +176,8 @@ mkdir_subgroup;
 # before attachint operation if subsystem is cpuset
 if [ "$subsystem" == "cpuset" ] || [ "$subsystem" == "all" ] ; then
 	if [ "$exist_cpuset" != "" ]; then
-		do_echo 1 1 "$cpus" /sys/fs/cgroup/subgroup_1/cpuset.cpus;
-		do_echo 1 1 "$mems" /sys/fs/cgroup/subgroup_1/cpuset.mems;
+		do_echo 1 1 "$cpus" /sys/fs/cgroup/cpu/subgroup_1/cpuset.cpus;
+		do_echo 1 1 "$mems" /sys/fs/cgroup/cpu/subgroup_1/cpuset.mems;
 	fi
 fi
 
@@ -185,13 +185,13 @@ if [ $mount_times -ne 1 ]; then
 	count=0
 	for i in `seq 1 $mount_times`
 	do
-		do_echo 1 1 $pid /sys/fs/cgroup/subgroup_1/tasks
+		do_echo 1 1 $pid /sys/fs/cgroup/cpu/subgroup_1/tasks
 		if [ "$subsystem" == "ns" ] || [ "$subsystem" == "all" ] ; then
 			do_kill 1 1 9 $pid
 			$TESTROOT/cgroup_fj_proc &
 			pid=$!
 		else
-			do_echo 1 1 $pid /sys/fs/cgroup/tasks
+			do_echo 1 1 $pid /sys/fs/cgroup/cpu/tasks
 		fi
 		setup;
 		$TESTROOT/cgroup_fj_proc &
@@ -200,8 +200,8 @@ if [ $mount_times -ne 1 ]; then
 		mkdir_subgroup;
 		if [ "$subsystem" == "cpuset" ] || [ "$subsystem" == "all" ] ; then
 			if [ "$exist_cpuset" != "" ]; then
-				do_echo 1 1 "$cpus" /sys/fs/cgroup/subgroup_1/cpuset.cpus;
-				do_echo 1 1 "$mems" /sys/fs/cgroup/subgroup_1/cpuset.mems;
+				do_echo 1 1 "$cpus" /sys/fs/cgroup/cpu/subgroup_1/cpuset.cpus;
+				do_echo 1 1 "$mems" /sys/fs/cgroup/cpu/subgroup_1/cpuset.mems;
 			fi
 		fi
 		let "count = $count + 1"
@@ -249,12 +249,12 @@ else
 		do
 			do_echo 1 1 $pid "${pathes[$i]}""tasks"
 		done
-		do_echo 1 1 $pid /sys/fs/cgroup/tasks
+		do_echo 1 1 $pid /sys/fs/cgroup/cpu/tasks
 		;;
 	"2" )
-		pathes2[0]="/sys/fs/cgroup/"
+		pathes2[0]="/sys/fs/cgroup/cpu/"
 		pathes2[1]="${pathes[$count]}"
-		pathes2[3]="/sys/fs/cgroup/"
+		pathes2[3]="/sys/fs/cgroup/cpu/"
 		for i in `seq 1 $nlines`
 		do
 			j=$i
@@ -276,8 +276,8 @@ else
 	"3" )
 		count2=$count
 		let "count2 = $count2 + 1"
-		pathes[0]="/sys/fs/cgroup/"
-		pathes[$count2]="/sys/fs/cgroup/"
+		pathes[0]="/sys/fs/cgroup/cpu/"
+		pathes[$count2]="/sys/fs/cgroup/cpu/"
 		for i in `seq 0 $count`
 		do
 			j=$i
@@ -299,7 +299,7 @@ else
 	*  )
 		;;
 	esac
-	cat /sys/fs/cgroup/subgroup_1/tasks
+	cat /sys/fs/cgroup/cpu/subgroup_1/tasks
 	reclaim_foundling;
 	for i in `seq 1 $count`
 	do
@@ -309,7 +309,7 @@ else
 	done
 fi
 
-#do_rmdir 0 1 /sys/fs/cgroup/subgroup_*
+#do_rmdir 0 1 /sys/fs/cgroup/cpu/subgroup_*
 
 sleep 1
 
