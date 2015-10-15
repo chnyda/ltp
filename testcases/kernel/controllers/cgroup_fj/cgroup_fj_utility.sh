@@ -456,7 +456,7 @@ setup()
 	if [ -e /sys/fs/cgroup ]; then
 		cleanup;
 	fi
-	do_mkdir 1 1 /sys/fs/cgroup
+	#do_mkdir 1 1 /sys/fs/cgroup
 
 	if [ -e $TESTROOT/cgroup_fj_release_agent ]
 	then
