@@ -50,6 +50,25 @@ exist_subsystem()
 	fi
 }
 
+get_mount_point()
+{
+	mount_point=`grep -w $subsystem /proc/mounts | cut -f 2 | cut -d " " -f2`;
+
+	if [ "$subsystem" = "none" ] && [ -e /sys/fs/cgroup/ ]; then
+		mount_point="/sys/fs/cgroup"
+	fi
+
+	if [ "$subsystem" = "all" ] && [ -e /sys/fs/cgroup/ ];  then
+		mount_point="/sys/fs/cgroup"
+	fi
+
+	if [ "$mount_point" = "" ]; then
+		mount_point=/dev/cgroup
+	fi
+
+	echo "mount_point is: $mount_point" 
+}
+
 get_subsystem()
 {
 	case $subsystem in
@@ -234,18 +253,17 @@ do_exit()
 	fi
 
 	exit_here=$1
-	expectted=$2
+	expected=$2
 	exit_status=$3
-
 	if [ $exit_status -eq 0 ] ;then
-		if [ $expectted -lt 1 ]; then
+		if [ $expected -lt 1 ]; then
 			if [ $exit_here -ge 1 ]; then
 				cleanup;
 				exit -1
 			fi
 		fi
 	else
-		if [ $expectted -ge 1 ]; then
+		if [ $expected -ge 1 ]; then
 			if [ $exit_here -ge 1 ]; then
 				cleanup;
 				exit -1
@@ -369,7 +387,7 @@ do_mount()
 			echo "\"mount -t cgroup $para_o $something $target\" (expected: fail)"
 		fi
 	fi
-
+	echo mount -t cgroup $para_o $something $target
 	mount -t cgroup $para_o $something $target
 	do_exit $exit_here $expected $?;
 }
@@ -451,10 +469,22 @@ do_kill()
 
 setup()
 {
-	if [ -e /dev/cgroup ]; then
+	echo $mount_point ----
+
+	# Current test will fail if the previous one failed to rmdir
+	# so try to remove all subgroups
+	rm -rf $mount_point/subgroup_*
+
+	if [ -e $mount_point ] && [ "$mount_point" == "/dev/cgroup" ]; then
+		rm -rf /dev/cgroup
 		cleanup;
+		do_mkdir 1 1 $mount_point
 	fi
-	do_mkdir 1 1 /dev/cgroup
+
+	if [ "$mount_point" == "/dev/cgroup" ]; then
+		do_mkdir 1 1 $mount_point
+	fi
+
 
 	if [ -e $TESTROOT/cgroup_fj_release_agent ]
 	then
@@ -493,47 +523,49 @@ cleanup()
 
 	killall -9 cgroup_fj_proc 1>/dev/null 2>&1;
 
-	if [ -e /dev/cgroup/subgroup_1 ]; then
-		cat /dev/cgroup/subgroup_1/tasks > $TMPFILE
+	if [ -e $mount_point/subgroup_1 ]; then
+		cat $mount_point/subgroup_1/tasks > $TMPFILE
 		nlines=`cat $TMPFILE | wc -l`
 		for i in `seq 1 $nlines`
 		do
 			cur_pid=`sed -n "$i""p" $TMPFILE`
 			if [ -e /proc/$cur_pid/ ];then
-				do_echo 0 1 "$cur_pid" /dev/cgroup/tasks
+				do_echo 0 1 "$cur_pid" $mount_point/tasks
 			fi
 		done
-		do_rmdir 0 1 /dev/cgroup/subgroup_*
+		do_rmdir 0 1 $mount_point/subgroup_*
 	fi
 
 	if [ -e $TMPFILE ]; then
 		rm -f $TMPFILE 2>/dev/null
 	fi
 
-	mount_str="`mount -l | grep /dev/cgroup`"
-	if [ "$mount_str" != "" ]; then
-		do_umount 0 1 /dev/cgroup
-	fi
-
-	if [ -e /dev/cgroup ]; then
-		do_rmdir 0 1 /dev/cgroup
+	if [ "$mount_point" = "/dev/cgroup" ] ; then
+		mount_str="`mount -l | grep $mount_point`"
+		if [ "$mount_str" != "" ]; then
+			do_umount 0 1 $mount_point
+		fi
+		if [ -e $mount_point ]; then
+			echo "about to rm $mount_point"
+			do_rmdir 0 1 $mount_point
+		fi
 	fi
 }
 
 reclaim_foundling()
 {
-	if ! [ -e /dev/cgroup/subgroup_1 ]; then
+	if ! [ -e $mount_point/subgroup_1 ]; then
 		return
 	fi
 	foundlings=0
-	cat `find /dev/cgroup/subgroup_* -name "tasks"` > $TMPFILE
+	cat `find $mount_point/subgroup_* -name "tasks"` > $TMPFILE
 	nlines=`cat "$TMPFILE" | wc -l`
 	for k in `seq 1 $nlines`
 	do
 		cur_pid=`sed -n "$k""p" $TMPFILE`
 		if [ -e /proc/$cur_pid/ ];then
 			echo "ERROR: pid $cur_pid reclaimed"
-			do_echo 0 1 "$cur_pid" "/dev/cgroup/tasks"
+			do_echo 0 1 "$cur_pid" "$mount_point/tasks"
 			: $((foundlings += 1))
 		fi
 	done
@@ -545,18 +577,22 @@ reclaim_foundling()
 
 mkdir_subgroup()
 {
-	if ! [ -e /dev/cgroup ]; then
-		echo "ERROR: /dev/cgroup doesn't exist... Exiting test"
+	if ! [ -e $mount_point ]; then
+		echo "ERROR: $mount_point doesn't exist... Exiting test"
 		exit -1;
 	fi
 
-	do_mkdir 1 1 /dev/cgroup/subgroup_1
+	do_mkdir 1 1 $mount_point/subgroup_1
 }
 
 mount_cgroup ()
 {
 	expected=1
 	PARAMETER_O="";
+
+	if ! [ "$mount_point" == "/dev/cgroup" ] ; then
+		return 0
+	fi
 	if [ "$subsystem" == "abc" ]; then
 		expected=0
 	fi
@@ -579,10 +615,10 @@ mount_cgroup ()
 	fi
 	if [ "$remount_use_str" != "" ]; then
 		if [ "$PARAMETER_O" != "" ]; then
-			do_mount 1 1 "-o$PARAMETER_O" /dev/cgroup
+			do_mount 1 1 "-o$PARAMETER_O" $mount_point
 			PARAMETER_O="$PARAMETER_O"",""$remount_use_str"
 		else
-			do_mount 1 1 "" /dev/cgroup
+			do_mount 1 1 "" $mount_point
 			PARAMETER_O="$remount_use_str"
 		fi
 		sleep 1
@@ -592,7 +628,7 @@ mount_cgroup ()
 		PARAMETER_O="-o""$PARAMETER_O"
 	fi
 
-	do_mount 1 $expected "$PARAMETER_O" /dev/cgroup
+	do_mount 1 $expected "$PARAMETER_O" $mount_point
 }
 
 check_para()
