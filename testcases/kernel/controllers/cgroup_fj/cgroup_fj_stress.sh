@@ -271,7 +271,7 @@ else
 					do_echo 0 1 "$cur_pid" "${pathes[$j]}tasks"
 				fi
 			done
-		done
+		 done
 		;;
 	"3" )
 		count2=$count
@@ -312,7 +312,7 @@ do_rmdir 0 1 /sys/fs/cgroup/subgroup_*
 
 sleep 1
 
-cleanup;
+#cleanup;
 do_kill 1 1 9 $pid
 sleep 1
 exit 0;
