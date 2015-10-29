@@ -51,8 +51,6 @@
 char *TCID = "diotest06";
 int TST_TOTAL = 3;
 
-#ifdef O_DIRECT
-
 #define	BUFSIZE	4096
 #define TRUE 1
 #define LEN 30
@@ -62,7 +60,7 @@ int TST_TOTAL = 3;
 
 static int iter = 100;
 static int bufsize = BUFSIZE;
-static off64_t offset = 0;
+static off64_t offset;
 static int nvector = 20;
 static char filename[LEN];
 static int fd1 = -1;
@@ -86,6 +84,7 @@ int runtest(int fd_r, int fd_w, int childnum, int action)
 {
 	off64_t seekoff;
 	int i, bufsize = BUFSIZE;
+	int ret;
 	char *buf1, *buf2;
 
 	buf1 = valloc(BUFSIZE);
@@ -127,8 +126,9 @@ int runtest(int fd_r, int fd_w, int childnum, int action)
 				 strerror(errno));
 			return (-1);
 		}
-		int ret;
-		if ((ret = read(fd_r, buf2, bufsize)) < bufsize) {
+		ret = read(fd_r, buf2, bufsize);
+
+		if (ret < bufsize) {
 			tst_resm(TFAIL, "read failed: %s", strerror(errno));
 			return (-1);
 		}
@@ -144,18 +144,20 @@ int runtest(int fd_r, int fd_w, int childnum, int action)
 /*
  * child_function: open the file for read and write. Call the runtest routine.
 */
-int child_function(int childnum, int action)
+static int child_function(int childnum, int action)
 {
 	int fd_w, fd_r;
 
 	switch (action) {
 	case READ_DIRECT:
-		if ((fd_w = open(filename, O_WRONLY | O_CREAT, 0666)) < 0) {
+		fd_w = open(filename, O_WRONLY | O_CREAT, 0666);
+		if (fd_w < 0) {
 			tst_resm(TFAIL, "fd_w open failed for %s: %s",
 				 filename, strerror(errno));
 			return (-1);
 		}
-		if ((fd_r = open(filename, O_DIRECT | O_RDONLY, 0666)) < 0) {
+		fd_r = open(filename, O_DIRECT | O_RDONLY, 0666);
+		if (fd_r < 0) {
 			tst_resm(TFAIL, "fd_r open failed for %s: %s",
 				 filename, strerror(errno));
 			close(fd_w);
@@ -171,13 +173,14 @@ int child_function(int childnum, int action)
 		}
 		break;
 	case WRITE_DIRECT:
-		if ((fd_w =
-		     open(filename, O_DIRECT | O_WRONLY | O_CREAT, 0666)) < 0) {
+		fd_w = open(filename, O_DIRECT | O_WRONLY | O_CREAT, 0666);
+		if (fd_w < 0) {
 			tst_resm(TFAIL, "fd_w open failed for %s: %s", filename,
 				 strerror(errno));
 			return (-1);
 		}
-		if ((fd_r = open(filename, O_RDONLY, 0666)) < 0) {
+		fd_r = open(filename, O_RDONLY, 0666);
+		if (fd_r < 0) {
 			tst_resm(TFAIL, "fd_r open failed for %s: %s",
 				 filename, strerror(errno));
 			close(fd_w);
@@ -193,13 +196,14 @@ int child_function(int childnum, int action)
 		}
 		break;
 	case RDWR_DIRECT:
-		if ((fd_w =
-		     open(filename, O_DIRECT | O_WRONLY | O_CREAT, 0666)) < 0) {
+		fd_w = open(filename, O_DIRECT | O_WRONLY | O_CREAT, 0666);
+		if (fd_w < 0) {
 			tst_resm(TFAIL, "fd_w open failed for %s: %s", filename,
 				 strerror(errno));
 			return (-1);
 		}
-		if ((fd_r = open(filename, O_DIRECT | O_RDONLY, 0666)) < 0) {
+		fd_r = open(filename, O_DIRECT | O_RDONLY, 0666);
+		if (fd_r < 0) {
 			tst_resm(TFAIL, "fd_r open failed for %s: %s",
 				 filename, strerror(errno));
 			close(fd_w);
@@ -233,7 +237,8 @@ int main(int argc, char *argv[])
 	while ((i = getopt(argc, argv, "b:o:i:n:v:f:")) != -1) {
 		switch (i) {
 		case 'b':
-			if ((bufsize = atoi(optarg)) <= 0) {
+			bufsize = atoi(optarg);
+			if ((bufsize) <= 0) {
 				fprintf(stderr, "bufsize must be > 0\n");
 				prg_usage();
 			}
@@ -244,25 +249,29 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'o':
-			if ((offset = atoi(optarg)) <= 0) {
+			offset = atoi(optarg);
+			if (offset <= 0) {
 				fprintf(stderr, "offset must be > 0\n");
 				prg_usage();
 			}
 			break;
 		case 'i':
-			if ((iter = atoi(optarg)) <= 0) {
+			iter = atoi(optarg);
+			if (iter <= 0) {
 				fprintf(stderr, "iterations must be > 0\n");
 				prg_usage();
 			}
 			break;
 		case 'n':
-			if ((numchild = atoi(optarg)) <= 0) {
+			numchild = atoi(optarg);
+			if (numchild <= 0) {
 				fprintf(stderr, "no of children must be > 0\n");
 				prg_usage();
 			}
 			break;
 		case 'v':
-			if ((nvector = atoi(optarg)) <= 0) {
+			nvector = atoi(optarg);
+			if (nvector <= 0) {
 				fprintf(stderr, "vectory array must be > 0\n");
 				prg_usage();
 			}
@@ -343,18 +352,22 @@ static void setup(void)
 {
 	tst_tmpdir();
 
-	if ((fd1 = open(filename, O_CREAT | O_EXCL, 0600)) < 0) {
+	fd1 = open(filename, O_CREAT | O_EXCL, 0600);
+	if (fd1 < 0) {
 		tst_brkm(TBROK, cleanup, "Couldn't create test file %s: %s",
 			 filename, strerror(errno));
 	}
 	close(fd1);
 
 	/* Test for filesystem support of O_DIRECT */
-	if ((fd1 = open(filename, O_DIRECT, 0600)) < 0) {
+	fd1 = open(filename, O_DIRECT, 0600);
+	if (fd1 < 0 && errno == EINVAL)
 		tst_brkm(TCONF, cleanup,
 			 "O_DIRECT is not supported by this filesystem. %s",
 			 strerror(errno));
-	}
+	else if (fd1 < 0)
+		tst_brkm(TBROK, cleanup, "Couldn't open test file %s: %s",
+			 filename, strerror(errno));
 	close(fd1);
 }
 
@@ -365,12 +378,3 @@ static void cleanup(void)
 
 	tst_rmdir();
 }
-
-#else /* O_DIRECT */
-
-int main(void)
-{
-	tst_brkm(TCONF, NULL, "O_DIRECT is not defined.");
-}
-
-#endif /* O_DIRECT */

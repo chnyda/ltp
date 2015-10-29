@@ -1,20 +1,20 @@
 /*
+ * Copyright (c) International Business Machines  Corp., 2002
+ *  04/30/2002 Narasimha Sharoff nsharoff@us.ibm.com
  *
- *   Copyright (c) International Business Machines  Corp., 2002
+ * This program is free software;  you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- *   This program is free software;  you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 2 of the License, or
- *   (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY;  without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
+ * the GNU General Public License for more details.
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY;  without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
- *   the GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program;  if not, write to the Free Software
- *   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * You should have received a copy of the GNU General Public License
+ * along with this program;  if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /*
@@ -47,12 +47,6 @@
  *
  * USAGE
  *      diotest4 [-b filesize_in_blocks]
- *
- * History
- *	04/22/2002	Narasimha Sharoff nsharoff@us.ibm.com
- *
- * RESTRICTIONS
- *	None
 */
 
 #include <stdio.h>
@@ -72,13 +66,11 @@
 #include "test.h"
 #include "tst_fs_type.h"
 
-char *TCID = "diotest4";	/* Test program identifier.    */
-int TST_TOTAL = 17;		/* Total number of test conditions */
-int NO_NFS = 1;			/* Test on NFS or not */
+char *TCID = "diotest4";
+int TST_TOTAL = 17;
+int NO_NFS = 1;
 
-#ifdef O_DIRECT
-
-#define BUFSIZE 	4096
+#define BUFSIZE	4096
 #define TRUE	1
 #define LEN	30
 
@@ -88,13 +80,23 @@ int NO_NFS = 1;			/* Test on NFS or not */
 #define ADDRESS_OF_MAIN main
 #endif
 
+static int fd1 = -1;
+static char filename[LEN];
+
+static void prg_usage(void);
+static int runtest_f(int fd, char *buf, int offset, int count, int errnum,
+				char *msg);
+
+static int runtest_s(int fd, char *buf, int offset, int count, char *msg);
+static void setup(void);
+static void cleanup(void);
+
 /*
  * runtest_f: Do read, writes. Verify the error value obtained by
  *	running read or write with the expected error value (errnum).
 */
-int
-runtest_f(int fd, char *buf, int offset, int count, int errnum, int testnum,
-	  char *msg)
+static int runtest_f(int fd, char *buf, int offset, int count, int errnum,
+				char *msg)
 {
 	int ret;
 	int l_fail = 0;
@@ -129,13 +131,13 @@ runtest_f(int fd, char *buf, int offset, int count, int errnum, int testnum,
 			l_fail = TRUE;
 		}
 	}
-	return (l_fail);
+	return l_fail;
 }
 
 /*
  * runtest_s: Do read, writes. Verify the they run successfully.
 */
-int runtest_s(int fd, char *buf, int offset, int count, int testnum, char *msg)
+static int runtest_s(int fd, char *buf, int offset, int count, char *msg)
 {
 	int ret;
 	int l_fail = 0;
@@ -145,7 +147,8 @@ int runtest_s(int fd, char *buf, int offset, int count, int testnum, char *msg)
 			 strerror(errno));
 		l_fail = TRUE;
 	} else {
-		if ((ret = read(fd, buf, count)) < 0) {
+		ret = read(fd, buf, count);
+		if (ret < 0) {
 			tst_resm(TFAIL, "read failed for %s. returns %d: %s",
 				 msg, ret, strerror(errno));
 			l_fail = TRUE;
@@ -156,19 +159,20 @@ int runtest_s(int fd, char *buf, int offset, int count, int testnum, char *msg)
 			 strerror(errno));
 		l_fail = TRUE;
 	} else {
-		if ((ret = write(fd, buf, count)) < 0) {
+		ret = write(fd, buf, count);
+		if (ret < 0) {
 			tst_resm(TFAIL, "write failed for %s. returns %d: %s",
 				 msg, ret, strerror(errno));
 			l_fail = TRUE;
 		}
 	}
-	return (l_fail);
+	return l_fail;
 }
 
 /*
  * prg_usage - Display the program usage
 */
-void prg_usage()
+static void prg_usage(void)
 {
 	fprintf(stderr, "Usage: diotest4 [-b filesize_in_blocks]\n");
 	exit(1);
@@ -183,11 +187,6 @@ static void testcheck_end(int ret, int *failed, int *fail_count, char *msg)
 	} else
 		tst_resm(TPASS, "%s", msg);
 }
-
-static void setup(void);
-static void cleanup(void);
-static int fd1 = -1;
-static char filename[LEN];
 
 int main(int argc, char *argv[])
 {
@@ -207,7 +206,8 @@ int main(int argc, char *argv[])
 	while ((i = getopt(argc, argv, "b:")) != -1) {
 		switch (i) {
 		case 'b':
-			if ((fblocks = atoi(optarg)) <= 0) {
+			fblocks = atoi(optarg);
+			if (fblocks <= 0) {
 				fprintf(stderr, "fblocks must be > 0\n");
 				prg_usage();
 			}
@@ -220,11 +220,13 @@ int main(int argc, char *argv[])
 	setup();
 
 	/* Open file and fill, allocate for buffer */
-	if ((fd = open(filename, O_DIRECT | O_RDWR | O_CREAT, 0666)) < 0) {
+	fd = open(filename, O_DIRECT | O_RDWR | O_CREAT, 0666);
+	if (fd < 0) {
 		tst_brkm(TBROK, cleanup, "open failed for %s: %s",
 			 filename, strerror(errno));
 	}
-	if ((buf0 = valloc(BUFSIZE)) == NULL) {
+	buf0 = valloc(BUFSIZE);
+	if (buf0 == NULL) {
 		tst_brkm(TBROK, cleanup, "valloc() buf0 failed: %s",
 			 strerror(errno));
 	}
@@ -236,11 +238,13 @@ int main(int argc, char *argv[])
 		}
 	}
 	close(fd);
-	if ((buf2 = valloc(BUFSIZE)) == NULL) {
+	buf2 = valloc(BUFSIZE);
+	if (buf2 == NULL) {
 		tst_brkm(TBROK, cleanup, "valloc() buf2 failed: %s",
 			 strerror(errno));
 	}
-	if ((fd = open(filename, O_DIRECT | O_RDWR)) < 0) {
+	fd = open(filename, O_DIRECT | O_RDWR);
+	if (fd < 0) {
 		tst_brkm(TBROK, cleanup, "open failed for %s: %s",
 			 filename, strerror(errno));
 	}
@@ -259,18 +263,14 @@ int main(int argc, char *argv[])
 		tst_resm(TPASS, "Negative Offset");
 	total++;
 
-	/* Test-2: Removed */
-	tst_resm(TPASS, "removed");
-
 	/* Test-3: Odd count of read and write */
 	offset = 0;
 	count = 1;
-	lseek(fd, 0, SEEK_SET);
-	if (write(fd, buf2, 4096) == -1) {
+	lseek(fd, offset, SEEK_SET);
+	if (write(fd, buf2, 4096) == -1)
 		tst_resm(TFAIL, "can't write to file %d", ret);
-	}
 	if (NO_NFS) {
-		ret = runtest_f(fd, buf2, offset, count, EINVAL, 3, "odd count");
+		ret = runtest_f(fd, buf2, offset, count, EINVAL, "odd count");
 		testcheck_end(ret, &failed, &fail_count,
 					"Odd count of read and write");
 	} else
@@ -303,19 +303,20 @@ int main(int argc, char *argv[])
 	offset = 4096;
 	count = bufsize;
 	newfd = -1;
-	ret = runtest_f(newfd, buf2, offset, count, EBADF, 5, "negative fd");
+	ret = runtest_f(newfd, buf2, offset, count, EBADF, "negative fd");
 	testcheck_end(ret, &failed, &fail_count, "Invalid file descriptor");
 	total++;
 
 	/* Test-6: Out of range file descriptor */
 	count = bufsize;
 	offset = 4096;
-	if ((newfd = getdtablesize()) < 0) {
+	newfd = getdtablesize();
+	if (newfd < 0) {
 		tst_resm(TFAIL, "getdtablesize() failed: %s", strerror(errno));
 		failed = TRUE;
 		tst_resm(TFAIL, "Out of range file descriptor");
 	} else {
-		ret = runtest_f(newfd, buf2, offset, count, EBADF, 6,
+		ret = runtest_f(newfd, buf2, offset, count, EBADF,
 			      "out of range fd");
 		testcheck_end(ret, &failed, &fail_count,
 					"Out of range file descriptor");
@@ -330,20 +331,18 @@ int main(int argc, char *argv[])
 		tst_brkm(TBROK, cleanup, "can't close fd %d: %s", fd,
 			 strerror(errno));
 	}
-	ret = runtest_f(fd, buf2, offset, count, EBADF, 7, "closed fd");
+	ret = runtest_f(fd, buf2, offset, count, EBADF, "closed fd");
 	testcheck_end(ret, &failed, &fail_count, "Closed file descriptor");
 	total++;
-
-	/* Test-9: removed */
-	tst_resm(TPASS, "removed");
 
 	/* Test-9: Character device (/dev/null) read, write */
 	offset = 0;
 	count = bufsize;
-	if ((newfd = open("/dev/null", O_DIRECT | O_RDWR)) < 0) {
+	newfd = open("/dev/null", O_DIRECT | O_RDWR);
+	if (newfd < 0) {
 		tst_resm(TCONF, "Direct I/O on /dev/null is not supported");
 	} else {
-		ret = runtest_s(newfd, buf2, offset, count, 9, "/dev/null");
+		ret = runtest_s(newfd, buf2, offset, count, "/dev/null");
 		testcheck_end(ret, &failed, &fail_count,
 					"character device read, write");
 	}
@@ -352,32 +351,35 @@ int main(int argc, char *argv[])
 
 	/* Test-10: read, write to a mmaped file */
 	shm_base = (char *)(((long)sbrk(0) + (shmsz - 1)) & ~(shmsz - 1));
-	if (shm_base == NULL) {
+	if (shm_base == NULL)
 		tst_brkm(TBROK, cleanup, "sbrk failed: %s", strerror(errno));
-	}
+
 	offset = 4096;
 	count = bufsize;
-	if ((fd = open(filename, O_DIRECT | O_RDWR)) < 0) {
+	fd = open(filename, O_DIRECT | O_RDWR);
+	if (fd < 0) {
 		tst_brkm(TBROK, cleanup, "can't open %s: %s",
 			 filename, strerror(errno));
 	}
 	shm_base = mmap(shm_base, 0x100000, PROT_READ | PROT_WRITE,
 			MAP_SHARED | MAP_FIXED, fd, 0);
-	if (shm_base == (caddr_t) - 1) {
+	/* check -1 */
+	if (shm_base == ((caddr_t) -1)) {
 		tst_brkm(TBROK, cleanup, "can't mmap file: %s",
 			 strerror(errno));
 	}
-	ret = runtest_s(fd, buf2, offset, count, 10, "mmapped file");
+	ret = runtest_s(fd, buf2, offset, count, "mmapped file");
 	testcheck_end(ret, &failed, &fail_count,
 				"read, write to a mmaped file");
 	total++;
 
 	/* Test-11: read, write to an unmaped file with munmap */
-	if ((ret = munmap(shm_base, 0x100000)) < 0) {
+	ret = munmap(shm_base, 0x100000);
+	if (ret < 0) {
 		tst_brkm(TBROK, cleanup, "can't unmap file: %s",
 			 strerror(errno));
 	}
-	ret = runtest_s(fd, buf2, offset, count, 11, "unmapped file");
+	ret = runtest_s(fd, buf2, offset, count, "unmapped file");
 	testcheck_end(ret, &failed, &fail_count,
 				"read, write to an unmapped file");
 	close(fd);
@@ -386,7 +388,8 @@ int main(int argc, char *argv[])
 	/* Test-12: read from file not open for reading */
 	offset = 4096;
 	count = bufsize;
-	if ((fd = open(filename, O_DIRECT | O_WRONLY)) < 0) {
+	fd = open(filename, O_DIRECT | O_WRONLY);
+	if (fd < 0) {
 		tst_brkm(TBROK, cleanup, "can't open %s: %s",
 			 filename, strerror(errno));
 	}
@@ -412,7 +415,8 @@ int main(int argc, char *argv[])
 	/* Test-13: write to file not open for writing */
 	offset = 4096;
 	count = bufsize;
-	if ((fd = open(filename, O_DIRECT | O_RDONLY)) < 0) {
+	fd = open(filename, O_DIRECT | O_RDONLY);
+	if (fd < 0) {
 		tst_brkm(TBROK, cleanup, "can't open %s: %s",
 			 filename, strerror(errno));
 	}
@@ -438,13 +442,14 @@ int main(int argc, char *argv[])
 	/* Test-14: read, write with non-aligned buffer */
 	offset = 4096;
 	count = bufsize;
-	if ((fd = open(filename, O_DIRECT | O_RDWR)) < 0) {
+	fd = open(filename, O_DIRECT | O_RDWR);
+	if (fd < 0) {
 		tst_brkm(TBROK, cleanup, "can't open %s: %s",
 			 filename, strerror(errno));
 	}
 	if (NO_NFS) {
-		ret = runtest_f(fd, buf2 + 1, offset, count, EINVAL, 14,
-					" nonaligned buf");
+		ret = runtest_f(fd, buf2 + 1, offset, count, EINVAL,
+			" nonaligned buf");
 		testcheck_end(ret, &failed, &fail_count,
 				"read, write with non-aligned buffer");
 	} else
@@ -456,7 +461,8 @@ int main(int argc, char *argv[])
 	offset = 4096;
 	count = bufsize;
 	l_fail = 0;
-	if ((fd = open(filename, O_DIRECT | O_RDWR)) < 0) {
+	fd = open(filename, O_DIRECT | O_RDWR);
+	if (fd < 0) {
 		tst_brkm(TBROK, cleanup, "can't open %s: %s",
 			 filename, strerror(errno));
 	}
@@ -497,15 +503,15 @@ int main(int argc, char *argv[])
 	/* Test-16: read, write in non-existant space */
 	offset = 4096;
 	count = bufsize;
-	if ((buf1 =
-	     (char *)(((long)sbrk(0) + (shmsz - 1)) & ~(shmsz - 1))) == NULL) {
+	buf1 = (char *)(((long)sbrk(0) + (shmsz - 1)) & ~(shmsz - 1));
+	if (buf1 == NULL)
 		tst_brkm(TBROK | TERRNO, cleanup, "sbrk failed");
-	}
-	if ((fd = open(filename, O_DIRECT | O_RDWR)) < 0) {
+	fd = open(filename, O_DIRECT | O_RDWR);
+	if (fd < 0)
 		tst_brkm(TBROK | TERRNO, cleanup,
 			 "open(%s, O_DIRECT|O_RDWR) failed", filename);
-	}
-	ret = runtest_f(fd, buf1, offset, count, EFAULT, 16,
+
+	ret = runtest_f(fd, buf1, offset, count, EFAULT,
 		      " nonexistant space");
 	testcheck_end(ret, &failed, &fail_count,
 				"read, write in non-existant space");
@@ -515,11 +521,12 @@ int main(int argc, char *argv[])
 	/* Test-17: read, write for file with O_SYNC */
 	offset = 4096;
 	count = bufsize;
-	if ((fd = open(filename, O_DIRECT | O_RDWR | O_SYNC)) < 0) {
+	fd = open(filename, O_DIRECT | O_RDWR | O_SYNC);
+	if (fd < 0) {
 		tst_brkm(TBROK, cleanup,
 			 "open(%s, O_DIRECT|O_RDWR|O_SYNC failed)", filename);
 	}
-	ret = runtest_s(fd, buf2, offset, count, 17, "opened with O_SYNC");
+	ret = runtest_s(fd, buf2, offset, count, "opened with O_SYNC");
 	testcheck_end(ret, &failed, &fail_count,
 				"read, write for file with O_SYNC");
 	total++;
@@ -547,21 +554,25 @@ static void setup(void)
 	(void)sigaction(SIGXFSZ, &act, NULL);
 	sprintf(filename, "testdata-4.%ld", syscall(__NR_gettid));
 
-	if ((fd1 = open(filename, O_CREAT | O_EXCL, 0600)) < 0) {
+	fd1 = open(filename, O_CREAT | O_EXCL, 0600);
+	if (fd1 < 0) {
 		tst_brkm(TBROK, cleanup, "Couldn't create test file %s: %s",
 			 filename, strerror(errno));
 	}
 	close(fd1);
 
 	/* Test for filesystem support of O_DIRECT */
-	if ((fd1 = open(filename, O_DIRECT, 0600)) < 0) {
+	fd1 = open(filename, O_DIRECT, 0600);
+	if (fd1 < 0 && errno == EINVAL)
 		tst_brkm(TCONF, cleanup,
 			 "O_DIRECT is not supported by this filesystem. %s",
 			 strerror(errno));
-	}
+	else if (fd1 < 0)
+		tst_brkm(TBROK, cleanup, "Couldn't open test file %s: %s",
+			 filename, strerror(errno));
+
 	close(fd1);
 
-	/* On NFS or not */
 	if (tst_fs_type(cleanup, ".") == TST_NFS_MAGIC)
 		NO_NFS = 0;
 }
@@ -574,11 +585,3 @@ static void cleanup(void)
 	tst_rmdir();
 
 }
-
-#else /* O_DIRECT */
-
-int main()
-{
-	tst_brkm(TCONF, NULL, "O_DIRECT is not defined.");
-}
-#endif /* O_DIRECT */

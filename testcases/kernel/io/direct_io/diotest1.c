@@ -1,20 +1,20 @@
 /*
+ * Copyright (c) International Business Machines  Corp., 2002
+ *  04/30/2002 Narasimha Sharoff nsharoff@us.ibm.com
  *
- *   Copyright (c) International Business Machines  Corp., 2002
+ * This program is free software;  you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- *   This program is free software;  you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 2 of the License, or
- *   (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY;  without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
+ * the GNU General Public License for more details.
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY;  without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
- *   the GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program;  if not, write to the Free Software
- *   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * You should have received a copy of the GNU General Public License
+ * along with this program;  if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /*
@@ -30,12 +30,6 @@
  *
  * USAGE
  *	diotest1 [-b bufsize] [-n numblks] [-i infile] [-o outfile]
- *
- * History
- *	04/22/2002	Narasimha Sharoff nsharoff@us.ibm.com
- *
- * RESTRICTIONS
- *	None
 */
 
 #include <stdio.h>
@@ -50,20 +44,21 @@
 
 #include "test.h"
 
-char *TCID = "diotest01";	/* Test program identifier.    */
-int TST_TOTAL = 1;		/* Total number of test conditions */
-
-#ifdef O_DIRECT
+char *TCID = "diotest01";
+int TST_TOTAL = 1;
 
 #define	BUFSIZE	8192
 #define	NBLKS	20
 #define	LEN	30
 #define	TRUE 1
 
+static void fail_clean(int fd1, int fd2, char *infile, char *outfile);
+static void prg_usage(void);
+
 /*
  * prg_usage: display the program usage.
 */
-void prg_usage()
+static void prg_usage(void)
 {
 	fprintf(stderr,
 		"Usage: diotest1 [-b bufsize] [-n numblks] [-i infile] [-o outfile]\n");
@@ -73,7 +68,7 @@ void prg_usage()
 /*
  * fail_clean: cleanup and exit.
 */
-void fail_clean(int fd1, int fd2, char *infile, char *outfile)
+static void fail_clean(int fd1, int fd2, char *infile, char *outfile)
 {
 	close(fd1);
 	close(fd2);
@@ -98,7 +93,8 @@ int main(int argc, char *argv[])
 	while ((i = getopt(argc, argv, "b:n:i:o:")) != -1) {
 		switch (i) {
 		case 'b':
-			if ((bufsize = atoi(optarg)) <= 0) {
+			bufsize = atoi(optarg);
+			if (bufsize <= 0) {
 				fprintf(stderr, "bufsize must be > 0\n");
 				prg_usage();
 			}
@@ -109,7 +105,8 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'n':
-			if ((numblks = atoi(optarg)) <= 0) {
+			numblks = atoi(optarg);
+			if (numblks <= 0) {
 				fprintf(stderr, "numblks must be > 0\n");
 				prg_usage();
 			}
@@ -126,21 +123,25 @@ int main(int argc, char *argv[])
 	}
 
 	/* Test for filesystem support of O_DIRECT */
-	if ((fd = open(infile, O_DIRECT | O_RDWR | O_CREAT, 0666)) < 0) {
-		tst_brkm(TCONF,
-			 NULL,
-			 "O_DIRECT is not supported by this filesystem.");
-	} else {
-		close(fd);
-	}
+	fd = open(infile, O_DIRECT | O_RDWR | O_CREAT, 0666);
+	if (fd < 0 && errno == EINVAL)
+		tst_brkm(TCONF, NULL,
+			 "O_DIRECT is not supported by this filesystem. %s",
+			 strerror(errno));
+	else if (fd < 0)
+		tst_brkm(TBROK, NULL, "Couldn't open test file %s: %s",
+			 infile, strerror(errno));
+	close(fd);
 
 	/* Open files */
-	if ((fd1 = open(infile, O_DIRECT | O_RDWR | O_CREAT, 0666)) < 0) {
+	fd1 = open(infile, O_DIRECT | O_RDWR | O_CREAT, 0666);
+	if (fd1 < 0) {
 		tst_brkm(TFAIL, NULL, "open infile failed: %s",
 			 strerror(errno));
 	}
 
-	if ((fd2 = open(outfile, O_DIRECT | O_RDWR | O_CREAT, 0666)) < 0) {
+	fd2 = open(outfile, O_DIRECT | O_RDWR | O_CREAT, 0666);
+	if (fd2 < 0) {
 		close(fd1);
 		unlink(infile);
 		tst_brkm(TFAIL, NULL, "open outfile failed: %s",
@@ -148,7 +149,8 @@ int main(int argc, char *argv[])
 	}
 
 	/* Allocate for buf, Create input file */
-	if ((buf = valloc(bufsize)) == 0) {
+	buf = valloc(bufsize);
+	if (!buf) {
 		tst_resm(TFAIL, "valloc() failed: %s", strerror(errno));
 		fail_clean(fd1, fd2, infile, outfile);
 	}
@@ -201,11 +203,3 @@ int main(int argc, char *argv[])
 	tst_resm(TPASS, "Test passed");
 	tst_exit();
 }
-
-#else /* O_DIRECT */
-
-int main()
-{
-	tst_brkm(TCONF, NULL, "O_DIRECT is not defined.");
-}
-#endif /* O_DIRECT */

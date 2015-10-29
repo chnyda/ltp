@@ -1,20 +1,20 @@
 /*
+ * Copyright (c) International Business Machines  Corp., 2002
+ *  04/30/2002 Narasimha Sharoff nsharoff@us.ibm.com
  *
- *   Copyright (c) International Business Machines  Corp., 2002
+ * This program is free software;  you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- *   This program is free software;  you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 2 of the License, or
- *   (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY;  without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
+ * the GNU General Public License for more details.
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY;  without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
- *   the GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program;  if not, write to the Free Software
- *   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * You should have received a copy of the GNU General Public License
+ * along with this program;  if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /*
@@ -45,6 +45,8 @@
 #include <unistd.h>
 #include <ctype.h>
 
+#include "test.h"
+#include "safe_macros.h"
 #include "diotest_routines.h"
 
 /* **** Routines for buffer actions, comparisions **** */
@@ -55,20 +57,15 @@
 */
 void fillbuf(char *buf, int count, char value)
 {
-	while (count > 0) {
-		strncpy(buf, &value, 1);
-		buf++;
-		count = count - 1;
-	}
+	memset(buf, value, count);
 }
 
 void vfillbuf(struct iovec *iv, int vcnt, char value)
 {
 	int i;
 
-	for (i = 0; i < vcnt; iv++, i++) {
+	for (i = 0; i < vcnt; iv++, i++)
 		fillbuf(iv->iov_base, iv->iov_len, (char)value);
-	}
 }
 
 /*
@@ -84,10 +81,10 @@ int bufcmp(char *b1, char *b2, int bsize)
 			fprintf(stderr,
 				"bufcmp: offset %d: Expected: 0x%x, got 0x%x\n",
 				i, b1[i], b2[i]);
-			return (-1);
+			return -1;
 		}
 	}
-	return (0);
+	return 0;
 }
 
 int vbufcmp(struct iovec *iv1, struct iovec *iv2, int vcnt)
@@ -116,16 +113,18 @@ int filecmp(char *f1, char *f2)
 	char buf1[BUFSIZ], buf2[BUFSIZ];
 
 	/* Open the file for read */
-	if ((fd1 = open(f1, O_RDONLY)) == -1) {
+	fd1 = open(f1, O_RDONLY);
+	if (fd1 == -1) {
 		fprintf(stderr, "compare_files: open failed %s: %s",
 			f1, strerror(errno));
-		return (-1);
+		return -1;
 	}
-	if ((fd2 = open(f2, O_RDONLY)) == -1) {
+	fd2 = open(f2, O_RDONLY);
+	if (fd2 == -1) {
 		fprintf(stderr, "compare_files: open failed %s: %s",
 			f2, strerror(errno));
 		close(fd1);
-		return (-1);
+		return -1;
 	}
 
 	/* Compare the files */
@@ -137,7 +136,7 @@ int filecmp(char *f1, char *f2)
 				ret1, f1, ret2, f2);
 			close(fd1);
 			close(fd2);
-			return (-1);
+			return -1;
 		}
 		for (i = 0; i < ret1; i++) {
 			if (strncmp(&buf1[i], &buf2[i], 1)) {
@@ -150,7 +149,7 @@ int filecmp(char *f1, char *f2)
 					isprint(buf2[i]) ? buf2[i] : '.');
 				close(fd1);
 				close(fd2);
-				return (-1);
+				return -1;
 			}
 		}
 	}
@@ -169,13 +168,15 @@ int forkchldrn(int **pidlst, int numchld, int action, int (*chldfunc) ())
 {
 	int i, cpid;
 
-	if ((*pidlst = ((int *)malloc(sizeof(int) * numchld))) == 0) {
+	*pidlst = ((int *) malloc(sizeof(int) * numchld));
+	if (*pidlst == NULL) {
 		fprintf(stderr, "forkchldrn: calloc failed for pidlst: %s\n",
 			strerror(errno));
 		return (-1);
 	}
 	for (i = 0; i < numchld; i++) {
-		if ((cpid = fork()) < 0) {
+		cpid = tst_fork();
+		if (cpid < 0) {
 			fprintf(stderr,
 				"forkchldrn: fork child %d failed, %s\n", i,
 				strerror(errno));
@@ -209,7 +210,7 @@ int killchldrn(int **pidlst, int numchld, int sig)
 			}
 		}
 	}
-	return (errflag);
+	return errflag;
 }
 
 /*
@@ -224,7 +225,8 @@ int waitchldrn(int **pidlst, int numchld)
 		cpid = *(*pidlst + i);
 		if (cpid == 0)
 			continue;
-		if ((ret = waitpid(cpid, &status, 0)) != cpid) {
+		ret = waitpid(cpid, &status, 0);
+		if (ret != cpid) {
 			fprintf(stderr,
 				"waitchldrn: wait failed for child %d, pid %d: %s\n",
 				i, cpid, strerror(errno));
@@ -233,5 +235,5 @@ int waitchldrn(int **pidlst, int numchld)
 		if (status)
 			errflag = -1;
 	}
-	return (errflag);
+	return errflag;
 }

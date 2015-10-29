@@ -1,20 +1,20 @@
 /*
+ * Copyright (c) International Business Machines  Corp., 2002
+ *  04/30/2002 Narasimha Sharoff nsharoff@us.ibm.com
  *
- *   Copyright (c) International Business Machines  Corp., 2002
+ * This program is free software;  you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- *   This program is free software;  you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 2 of the License, or
- *   (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY;  without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
+ * the GNU General Public License for more details.
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY;  without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
- *   the GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program;  if not, write to the Free Software
- *   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * You should have received a copy of the GNU General Public License
+ * along with this program;  if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /*
@@ -37,11 +37,6 @@
  *	diotest3 [-b bufsize] [-o offset] [-n numchild]
  *			[-i iterations [-f filename]
  *
- * History
- *	04/22/2002	Narasimha Sharoff nsharoff@us.ibm.com
- *
- * RESTRICTIONS
- *	None
 */
 
 #include <stdio.h>
@@ -57,10 +52,8 @@
 
 #include "test.h"
 
-char *TCID = "diotest03";	/* Test program identifier.    */
-int TST_TOTAL = 3;		/* Total number of test conditions */
-
-#ifdef O_DIRECT
+char *TCID = "diotest03";
+int TST_TOTAL = 3;
 
 #define	BUFSIZE	4096
 #define TRUE 1
@@ -69,15 +62,21 @@ int TST_TOTAL = 3;		/* Total number of test conditions */
 #define	WRITE_DIRECT 2
 #define	RDWR_DIRECT 3
 
-static int iter = 100;		/* Iterations. Default 100 */
-static int bufsize = BUFSIZE;	/* Buffersize. Default 4k */
-static int offset = 0;		/* Offset. Default 0 */
+static void prg_usage(void);
+static int runtest(int fd_r, int fd_w, int childnum, int action);
+static int child_function(int childnum, int action);
+static void cleanup(void);
+static void setup(void);
+
+static int iter = 100;
+static int bufsize = BUFSIZE;
+static int offset;
 static char filename[LEN];
 
 /*
  * prg_usage: display the program usage
 */
-void prg_usage()
+static void prg_usage(void)
 {
 	fprintf(stderr,
 		"Usage: diotest3 [-b bufsize] [-o offset] [-n numchild] [-i iterations] [-f filename]\n");
@@ -91,7 +90,7 @@ void prg_usage()
  *
  * XXX (garrcoop): shouldn't use libltp APIs because it runs forked.
  */
-int runtest(int fd_r, int fd_w, int childnum, int action)
+static int runtest(int fd_r, int fd_w, int childnum, int action)
 {
 	char *buf1;
 	char *buf2;
@@ -101,11 +100,13 @@ int runtest(int fd_r, int fd_w, int childnum, int action)
 
 	/* Allocate for buffers */
 	seekoff = offset + bufsize * childnum;
-	if ((buf1 = valloc(bufsize)) == 0) {
+	buf1 = valloc(bufsize);
+	if (!buf1) {
 		tst_resm(TFAIL | TERRNO, "valloc for buf1 failed");
 		return (-1);
 	}
-	if ((buf2 = valloc(bufsize)) == 0) {
+	buf2 = valloc(bufsize);
+	if (!buf2) {
 		tst_resm(TFAIL | TERRNO, "valloc for buf2 failed");
 		return (-1);
 	}
@@ -149,19 +150,21 @@ int runtest(int fd_r, int fd_w, int childnum, int action)
 /*
  * child_function: open the file for read and write. Call the runtest routine.
 */
-int child_function(int childnum, int action)
+static int child_function(int childnum, int action)
 {
 	int fd_w, fd_r;
 
 	switch (action) {
 	case READ_DIRECT:
-		if ((fd_w = open(filename, O_WRONLY | O_CREAT, 0666)) < 0) {
+		fd_w = open(filename, O_WRONLY | O_CREAT, 0666);
+		if (fd_w < 0) {
 			tst_resm(TFAIL | TERRNO,
 				 "open(%s, O_WRONLY|O_CREAT, ..) failed",
 				 filename);
 			return (-1);
 		}
-		if ((fd_r = open(filename, O_DIRECT | O_RDONLY, 0666)) < 0) {
+		fd_r = open(filename, O_DIRECT | O_RDONLY, 0666);
+		if (fd_r < 0) {
 			tst_resm(TFAIL | TERRNO,
 				 "open(%s, O_DIRECT|O_RDONLY, ..) failed",
 				 filename);
@@ -177,13 +180,14 @@ int child_function(int childnum, int action)
 		}
 		break;
 	case WRITE_DIRECT:
-		if ((fd_w =
-		     open(filename, O_DIRECT | O_WRONLY | O_CREAT, 0666)) < 0) {
+		fd_w = open(filename, O_DIRECT | O_WRONLY | O_CREAT, 0666);
+		if (fd_w < 0) {
 			tst_resm(TFAIL, "fd_w open failed for %s: %s", filename,
 				 strerror(errno));
 			return (-1);
 		}
-		if ((fd_r = open(filename, O_RDONLY, 0666)) < 0) {
+		fd_r = open(filename, O_RDONLY, 0666);
+		if (fd_r < 0) {
 			tst_resm(TFAIL, "fd_r open failed for %s: %s",
 				 filename, strerror(errno));
 			close(fd_w);
@@ -198,13 +202,14 @@ int child_function(int childnum, int action)
 		}
 		break;
 	case RDWR_DIRECT:
-		if ((fd_w =
-		     open(filename, O_DIRECT | O_WRONLY | O_CREAT, 0666)) < 0) {
+		fd_w = open(filename, O_DIRECT | O_WRONLY | O_CREAT, 0666);
+		if (fd_w < 0) {
 			tst_resm(TFAIL, "fd_w open failed for %s: %s", filename,
 				 strerror(errno));
 			return (-1);
 		}
-		if ((fd_r = open(filename, O_DIRECT | O_RDONLY, 0666)) < 0) {
+		fd_r = open(filename, O_DIRECT | O_RDONLY, 0666);
+		if (fd_r < 0) {
 			tst_resm(TFAIL, "fd_r open failed for %s: %s",
 				 filename, strerror(errno));
 			close(fd_w);
@@ -227,8 +232,6 @@ int child_function(int childnum, int action)
 	exit(0);
 }
 
-static void setup(void);
-static void cleanup(void);
 static int fd1 = -1;
 
 int main(int argc, char *argv[])
@@ -242,7 +245,8 @@ int main(int argc, char *argv[])
 	while ((i = getopt(argc, argv, "b:o:i:n:f:")) != -1) {
 		switch (i) {
 		case 'b':
-			if ((bufsize = atoi(optarg)) <= 0) {
+			bufsize = atoi(optarg);
+			if (bufsize <= 0) {
 				fprintf(stderr, "bufsize must be > 0\n");
 				prg_usage();
 			}
@@ -253,19 +257,22 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'o':
-			if ((offset = atoi(optarg)) <= 0) {
+			offset = atoi(optarg);
+			if (offset <= 0) {
 				fprintf(stderr, "offset must be > 0\n");
 				prg_usage();
 			}
 			break;
 		case 'i':
-			if ((iter = atoi(optarg)) <= 0) {
+			iter = atoi(optarg);
+			if (iter <= 0) {
 				fprintf(stderr, "iterations must be > 0\n");
 				prg_usage();
 			}
 			break;
 		case 'n':
-			if ((numchild = atoi(optarg)) <= 0) {
+			numchild = atoi(optarg);
+			if (numchild <= 0) {
 				fprintf(stderr, "no of children must be > 0\n");
 				prg_usage();
 			}
@@ -346,17 +353,24 @@ int main(int argc, char *argv[])
 
 static void setup(void)
 {
+
 	tst_tmpdir();
 
-	if ((fd1 = open(filename, O_CREAT | O_EXCL, 0600)) < 0)
+	fd1 = open(filename, O_CREAT | O_EXCL, 0600);
+	if (fd1 < 0)
 		tst_brkm(TBROK | TERRNO, cleanup,
 			 "open(%s, O_CREAT|O_EXCL, ..) failed", filename);
 	close(fd1);
 
 	/* Test for filesystem support of O_DIRECT */
-	if ((fd1 = open(filename, O_DIRECT, 0600)) < 0)
-		tst_brkm(TCONF, cleanup, "open(%s, O_DIRECT, ..) failed",
-			 filename);
+	fd1 = open(filename, O_DIRECT, 0600);
+	if (fd1 < 0 && errno == EINVAL)
+		tst_brkm(TCONF, cleanup,
+			 "O_DIRECT is not supported by this filesystem. %s",
+			 strerror(errno));
+	else if (fd1 < 0)
+		tst_brkm(TBROK, cleanup, "Couldn't open test file %s: %s",
+			 filename, strerror(errno));
 	close(fd1);
 }
 
@@ -366,12 +380,4 @@ static void cleanup(void)
 		unlink(filename);
 
 	tst_rmdir();
-
 }
-#else /* O_DIRECT */
-
-int main()
-{
-	tst_brkm(TCONF, NULL, "O_DIRECT is not defined.");
-}
-#endif /* O_DIRECT */
