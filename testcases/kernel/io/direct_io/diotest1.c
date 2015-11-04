@@ -40,19 +40,23 @@
 #include <sys/fcntl.h>
 #include <errno.h>
 
-#include "diotest_routines.h"
-
 #include "test.h"
-
-char *TCID = "diotest01";
-int TST_TOTAL = 1;
+#include "diotest_routines.h"
+#include "safe_macros.h"
 
 #define	BUFSIZE	8192
 #define	NBLKS	20
 #define	LEN	30
 #define	TRUE 1
 
-static void fail_clean(int fd1, int fd2, char *infile, char *outfile);
+char *TCID = "diotest01";
+int TST_TOTAL = 1;
+static int fd1;
+static int fd2;
+static char infile[LEN];
+static char outfile[LEN];
+
+static void cleanup(void);
 static void prg_usage(void);
 
 /*
@@ -68,21 +72,20 @@ static void prg_usage(void)
 /*
  * fail_clean: cleanup and exit.
 */
-static void fail_clean(int fd1, int fd2, char *infile, char *outfile)
+static void cleanup(void)
 {
-	close(fd1);
-	close(fd2);
+	if (fd1 > 0)
+		close(fd1);
+	if (fd2 > 0)
+		close(fd2);
 	unlink(infile);
 	unlink(outfile);
-	tst_brkm(TFAIL, NULL, "Test failed");
 }
 
 int main(int argc, char *argv[])
 {
 	int bufsize = BUFSIZE;	/* Buffer size. Default 8k */
 	int numblks = NBLKS;	/* Number of blocks. Default 20 */
-	char infile[LEN];	/* Input file. Default "infile" */
-	char outfile[LEN];	/* Output file. Default "outfile" */
 	int fd, fd1, fd2;
 	int i, n, offset;
 	char *buf;
@@ -134,32 +137,22 @@ int main(int argc, char *argv[])
 	close(fd);
 
 	/* Open files */
-	fd1 = open(infile, O_DIRECT | O_RDWR | O_CREAT, 0666);
-	if (fd1 < 0) {
-		tst_brkm(TFAIL, NULL, "open infile failed: %s",
-			 strerror(errno));
-	}
+	fd1 = SAFE_OPEN(NULL, infile, O_DIRECT | O_RDWR | O_CREAT, 0666);
 
-	fd2 = open(outfile, O_DIRECT | O_RDWR | O_CREAT, 0666);
-	if (fd2 < 0) {
-		close(fd1);
-		unlink(infile);
-		tst_brkm(TFAIL, NULL, "open outfile failed: %s",
-			 strerror(errno));
-	}
+	fd2 = SAFE_OPEN(cleanup, outfile, O_DIRECT | O_RDWR | O_CREAT, 0666);
 
 	/* Allocate for buf, Create input file */
 	buf = valloc(bufsize);
 	if (!buf) {
 		tst_resm(TFAIL, "valloc() failed: %s", strerror(errno));
-		fail_clean(fd1, fd2, infile, outfile);
+		cleanup();
 	}
 	for (i = 0; i < numblks; i++) {
 		fillbuf(buf, bufsize, (char)(i % 256));
 		if (write(fd1, buf, bufsize) < 0) {
 			tst_resm(TFAIL, "write infile failed: %s",
 				 strerror(errno));
-			fail_clean(fd1, fd2, infile, outfile);
+			cleanup();
 		}
 	}
 
@@ -167,39 +160,34 @@ int main(int argc, char *argv[])
 	offset = 0;
 	if (lseek(fd1, offset, SEEK_SET) < 0) {
 		tst_resm(TFAIL, "lseek(infd) failed: %s", strerror(errno));
-		fail_clean(fd1, fd2, infile, outfile);
+		cleanup();
 	}
 	while ((n = read(fd1, buf, bufsize)) > 0) {
 		if (lseek(fd2, offset, SEEK_SET) < 0) {
 			tst_resm(TFAIL, "lseek(outfd) failed: %s",
 				 strerror(errno));
-			fail_clean(fd1, fd2, infile, outfile);
+			cleanup();
 		}
 		if (write(fd2, buf, n) < n) {
 			tst_resm(TFAIL, "write(outfd) failed: %s",
 				 strerror(errno));
-			fail_clean(fd1, fd2, infile, outfile);
+			cleanup();
 		}
 		offset += n;
 		if (lseek(fd1, offset, SEEK_SET) < 0) {
 			tst_resm(TFAIL, "lseek(infd) failed: %s",
 				 strerror(errno));
-			fail_clean(fd1, fd2, infile, outfile);
+			cleanup();
 		}
 	}
 
-	/* Verify */
 	if (filecmp(infile, outfile) != 0) {
 		tst_resm(TFAIL, "file compare failed for %s and %s",
 			 infile, outfile);
-		fail_clean(fd1, fd2, infile, outfile);
+		cleanup();
 	}
 
-	/* Cleanup */
-	close(fd1);
-	close(fd2);
-	unlink(infile);
-	unlink(outfile);
+	cleanup();
 	tst_resm(TPASS, "Test passed");
 	tst_exit();
 }
