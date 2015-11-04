@@ -48,8 +48,8 @@
 #include <errno.h>
 
 #include "diotest_routines.h"
-
 #include "test.h"
+#include "safe_macros.h"
 
 char *TCID = "diotest02";
 int TST_TOTAL = 3;
@@ -61,12 +61,14 @@ int TST_TOTAL = 3;
 #define WRITE_DIRECT 2
 #define RDWR_DIRECT 3
 
-static int runtest(int fd_r, int fd_w, int iter, off64_t offset);
+static int runtest(int iter, off64_t offset);
 static void cleanup(void);
 static void prg_usage(void);
 static void setup(void);
 
 static int fd1 = -1;
+static int fd_r;
+static int fd_w;
 static char filename[LEN];
 
 /*
@@ -74,7 +76,7 @@ static char filename[LEN];
  *	For each iteration, write data starting at offse+iter*bufsize
  *	location in the file and read from there.
 */
-static int runtest(int fd_r, int fd_w, int iter, off64_t offset)
+static int runtest(int iter, off64_t offset)
 {
 	char *buf1;
 	char *buf2;
@@ -136,7 +138,7 @@ int main(int argc, char *argv[])
 	int iter = 100;		/* Iterations. Default 100 */
 	int bufsize = BUFSIZE;	/* Buffer size. Default 4k */
 	off64_t offset = 0;	/* Offset. Default 0 */
-	int i, fd_r, fd_w;
+	int i;
 	int fail_count = 0, total = 0, failed = 0;
 
 	/* Options */
@@ -180,15 +182,11 @@ int main(int argc, char *argv[])
 	setup();
 
 	/* Testblock-1: Read with Direct IO, Write without */
-	fd_w = open(filename, O_WRONLY | O_CREAT, 0666);
-	if (fd_w < 0)
-		tst_brkm(TBROK | TERRNO, cleanup,
-			 "open(%s, O_WRONLY..) failed", filename);
-	fd_r = open(filename, O_DIRECT | O_RDONLY, 0666);
-	if (fd_r < 0)
-		tst_brkm(TBROK | TERRNO, cleanup,
-			 "open(%s, O_DIRECT|O_RDONLY..) failed", filename);
-	if (runtest(fd_r, fd_w, iter, offset) < 0) {
+	fd_w = SAFE_OPEN(cleanup, filename, O_WRONLY | O_CREAT, 0666);
+
+	fd_r = SAFE_OPEN(cleanup, filename, O_DIRECT | O_RDONLY, 0666);
+
+	if (runtest(iter, offset) < 0) {
 		failed = TRUE;
 		fail_count++;
 		tst_resm(TFAIL, "Read with Direct IO, Write without");
@@ -200,15 +198,11 @@ int main(int argc, char *argv[])
 	total++;
 
 	/* Testblock-2: Write with Direct IO, Read without */
-	fd_w = open(filename, O_DIRECT | O_WRONLY | O_CREAT, 0666);
-	if (fd_w == -1)
-		tst_brkm(TBROK | TERRNO, cleanup,
-			 "open(%s, O_DIRECT|O_WRONLY..) failed", filename);
-	fd_r = open(filename, O_RDONLY | O_CREAT, 0666);
-	if (fd_r == -1)
-		tst_brkm(TBROK | TERRNO, cleanup,
-			 "open(%s, O_RDONLY..) failed", filename);
-	if (runtest(fd_r, fd_w, iter, offset) < 0) {
+	fd_w = SAFE_OPEN(cleanup, filename, O_DIRECT | O_WRONLY | O_CREAT, 0666);
+
+	fd_r = SAFE_OPEN(cleanup, filename, O_RDONLY | O_CREAT, 0666);
+
+	if (runtest(iter, offset) < 0) {
 		failed = TRUE;
 		fail_count++;
 		tst_resm(TFAIL, "Write with Direct IO, Read without");
@@ -220,17 +214,11 @@ int main(int argc, char *argv[])
 	total++;
 
 	/* Testblock-3: Read, Write with Direct IO. */
-	fd_w = open(filename, O_DIRECT | O_WRONLY | O_CREAT, 0666);
-	if (fd_w == -1)
-		tst_brkm(TBROK | TERRNO, cleanup,
-			 "open(%s, O_DIRECT|O_WRONLY|O_CREAT, ..) failed",
-			 filename);
-	fd_r = open(filename, O_DIRECT | O_RDONLY | O_CREAT, 0666);
-	if (fd_r == -1)
-		tst_brkm(TBROK | TERRNO, cleanup,
-			 "open(%s, O_DIRECT|O_RDONLY|O_CREAT, ..) failed",
-			 filename);
-	if (runtest(fd_r, fd_w, iter, offset) < 0) {
+	fd_w = SAFE_OPEN(cleanup, filename, O_DIRECT | O_WRONLY | O_CREAT, 0666);
+
+	fd_r = SAFE_OPEN(cleanup, filename, O_DIRECT | O_RDONLY | O_CREAT, 0666);
+
+	if (runtest(iter, offset) < 0) {
 		failed = TRUE;
 		fail_count++;
 		tst_resm(TFAIL, "Read, Write with Direct IO");
@@ -257,10 +245,7 @@ static void setup(void)
 
 	tst_tmpdir();
 
-	fd1 = open(filename, O_CREAT | O_EXCL, 0600);
-	if (fd1 == -1)
-		tst_brkm(TBROK | TERRNO, cleanup,
-			 "open(%s, O_CREAT|O_EXCL, ..) failed", filename);
+	fd1 = SAFE_OPEN(cleanup, filename, O_CREAT | O_EXCL, 0600);
 	close(fd1);
 
 	/* Test for filesystem support of O_DIRECT */
@@ -280,6 +265,9 @@ static void cleanup(void)
 {
 	if (fd1 != -1)
 		unlink(filename);
+	close(fd1);
+	close(fd_r);
+	close(fd_w);
 
 	tst_rmdir();
 
