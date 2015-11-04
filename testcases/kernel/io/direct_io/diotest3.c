@@ -51,6 +51,7 @@
 #include "diotest_routines.h"
 
 #include "test.h"
+#include "safe_macros.h"
 
 char *TCID = "diotest03";
 int TST_TOTAL = 3;
@@ -63,7 +64,7 @@ int TST_TOTAL = 3;
 #define	RDWR_DIRECT 3
 
 static void prg_usage(void);
-static int runtest(int fd_r, int fd_w, int childnum, int action);
+static int runtest(int childnum, int action);
 static int child_function(int childnum, int action);
 static void cleanup(void);
 static void setup(void);
@@ -72,6 +73,8 @@ static int iter = 100;
 static int bufsize = BUFSIZE;
 static int offset;
 static char filename[LEN];
+static int fd_r;
+static int fd_w;
 
 /*
  * prg_usage: display the program usage
@@ -90,7 +93,7 @@ static void prg_usage(void)
  *
  * XXX (garrcoop): shouldn't use libltp APIs because it runs forked.
  */
-static int runtest(int fd_r, int fd_w, int childnum, int action)
+static int runtest(int childnum, int action)
 {
 	char *buf1;
 	char *buf2;
@@ -152,26 +155,14 @@ static int runtest(int fd_r, int fd_w, int childnum, int action)
 */
 static int child_function(int childnum, int action)
 {
-	int fd_w, fd_r;
 
 	switch (action) {
 	case READ_DIRECT:
-		fd_w = open(filename, O_WRONLY | O_CREAT, 0666);
-		if (fd_w < 0) {
-			tst_resm(TFAIL | TERRNO,
-				 "open(%s, O_WRONLY|O_CREAT, ..) failed",
-				 filename);
-			return (-1);
-		}
-		fd_r = open(filename, O_DIRECT | O_RDONLY, 0666);
-		if (fd_r < 0) {
-			tst_resm(TFAIL | TERRNO,
-				 "open(%s, O_DIRECT|O_RDONLY, ..) failed",
-				 filename);
-			close(fd_w);
-			return (-1);
-		}
-		if (runtest(fd_r, fd_w, childnum, action) == -1) {
+		fd_w = SAFE_OPEN(cleanup, filename, O_WRONLY | O_CREAT, 0666);
+
+		fd_r = SAFE_OPEN(cleanup, filename, O_DIRECT | O_RDONLY, 0666);
+
+		if (runtest(childnum, action) == -1) {
 			tst_resm(TFAIL, "Read Direct-child %d failed",
 				 childnum);
 			close(fd_w);
@@ -180,20 +171,11 @@ static int child_function(int childnum, int action)
 		}
 		break;
 	case WRITE_DIRECT:
-		fd_w = open(filename, O_DIRECT | O_WRONLY | O_CREAT, 0666);
-		if (fd_w < 0) {
-			tst_resm(TFAIL, "fd_w open failed for %s: %s", filename,
-				 strerror(errno));
-			return (-1);
-		}
-		fd_r = open(filename, O_RDONLY, 0666);
-		if (fd_r < 0) {
-			tst_resm(TFAIL, "fd_r open failed for %s: %s",
-				 filename, strerror(errno));
-			close(fd_w);
-			return (-1);
-		}
-		if (runtest(fd_r, fd_w, childnum, action) == -1) {
+		fd_w = SAFE_OPEN(cleanup, filename, O_DIRECT | O_WRONLY | O_CREAT, 0666);
+
+		fd_r = SAFE_OPEN(cleanup, filename, O_RDONLY, 0666);
+
+		if (runtest(childnum, action) == -1) {
 			tst_resm(TFAIL, "Write Direct-child %d failed",
 				 childnum);
 			close(fd_w);
@@ -202,20 +184,11 @@ static int child_function(int childnum, int action)
 		}
 		break;
 	case RDWR_DIRECT:
-		fd_w = open(filename, O_DIRECT | O_WRONLY | O_CREAT, 0666);
-		if (fd_w < 0) {
-			tst_resm(TFAIL, "fd_w open failed for %s: %s", filename,
-				 strerror(errno));
-			return (-1);
-		}
-		fd_r = open(filename, O_DIRECT | O_RDONLY, 0666);
-		if (fd_r < 0) {
-			tst_resm(TFAIL, "fd_r open failed for %s: %s",
-				 filename, strerror(errno));
-			close(fd_w);
-			return (-1);
-		}
-		if (runtest(fd_r, fd_w, childnum, action) == -1) {
+		fd_w = SAFE_OPEN(cleanup, filename, O_DIRECT | O_WRONLY | O_CREAT, 0666);
+		
+		fd_r = SAFE_OPEN(cleanup, filename, O_DIRECT | O_RDONLY, 0666);
+
+		if (runtest(childnum, action) == -1) {
 			tst_resm(TFAIL, "RDWR Direct-child %d failed",
 				 childnum);
 			close(fd_w);
@@ -356,10 +329,7 @@ static void setup(void)
 
 	tst_tmpdir();
 
-	fd1 = open(filename, O_CREAT | O_EXCL, 0600);
-	if (fd1 < 0)
-		tst_brkm(TBROK | TERRNO, cleanup,
-			 "open(%s, O_CREAT|O_EXCL, ..) failed", filename);
+	fd1 = SAFE_OPEN(cleanup, filename, O_CREAT | O_EXCL, 0600);
 	close(fd1);
 
 	/* Test for filesystem support of O_DIRECT */
@@ -379,5 +349,11 @@ static void cleanup(void)
 	if (fd1 != -1)
 		unlink(filename);
 
+	if (fd1 > 0)
+		close(fd1);
+	if (fd_r > 0)
+		close(fd_r);
+	if (fd_w > 0)
+		close(fd_w);
 	tst_rmdir();
 }
