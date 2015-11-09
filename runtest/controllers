@@ -135,19 +135,66 @@ cgroup_fj_function_debug_yes_yes_3_yes_2_3_4_2 run_cgroup_test_fj.sh function de
 cgroup_fj_function_debug_yes_yes_3_yes_2_3_5_2 run_cgroup_test_fj.sh function debug yes yes 3 yes 2 3 5 2
 cgroup_fj_function_debug_yes_yes_3_yes_2_3_6_2 run_cgroup_test_fj.sh function debug yes yes 3 yes 2 3 6 2
 cgroup_fj_function_debug_yes_yes_3_yes_2_3_7_2 run_cgroup_test_fj.sh function debug yes yes 3 yes 2 3 7 2
-cgroup_fj_function2_1 run_cgroup_test_fj.sh function2 1
-cgroup_fj_function2_2 run_cgroup_test_fj.sh function2 2
-cgroup_fj_function2_3 run_cgroup_test_fj.sh function2 3
-cgroup_fj_function2_4 run_cgroup_test_fj.sh function2 4
-cgroup_fj_function2_5 run_cgroup_test_fj.sh function2 5
-cgroup_fj_function2_6 run_cgroup_test_fj.sh function2 6
-cgroup_fj_function2_7 run_cgroup_test_fj.sh function2 7
-cgroup_fj_function2_8 run_cgroup_test_fj.sh function2 8
-cgroup_fj_function2_9 run_cgroup_test_fj.sh function2 9
-cgroup_fj_function2_10 run_cgroup_test_fj.sh function2 10
-cgroup_fj_function2_11 run_cgroup_test_fj.sh function2 11
-cgroup_fj_function2_12 run_cgroup_test_fj.sh function2 12
-cgroup_fj_function2_13 run_cgroup_test_fj.sh function2 13
+cgroup_fj_function2_1_debug run_cgroup_test_fj.sh function2 1 debug
+cgroup_fj_function2_1_cpuset run_cgroup_test_fj.sh function2 1 cpuset
+cgroup_fj_function2_2_debug run_cgroup_test_fj.sh function2 2 debug
+cgroup_fj_function2_2_cpuset run_cgroup_test_fj.sh function2 2 cpuset
+cgroup_fj_function2_7_debug run_cgroup_test_fj.sh function2 7 debug
+cgroup_fj_function2_7_cpuset run_cgroup_test_fj.sh function2 7 cpuset
+cgroup_fj_function2_7_ns run_cgroup_test_fj.sh function2 7 ns
+cgroup_fj_function2_7_cpu run_cgroup_test_fj.sh function2 7 cpu
+cgroup_fj_function2_7_cpuacct run_cgroup_test_fj.sh function2 7 cpuacct
+cgroup_fj_function2_7_memory run_cgroup_test_fj.sh function2 7 memory
+cgroup_fj_function2_7_freezer run_cgroup_test_fj.sh function2 7 freezer
+cgroup_fj_function2_7_devices run_cgroup_test_fj.sh function2 7 devices
+cgroup_fj_function2_8_debug run_cgroup_test_fj.sh function2 8 debug
+cgroup_fj_function2_8_cpuset run_cgroup_test_fj.sh function2 8 cpuset
+cgroup_fj_function2_8_ns run_cgroup_test_fj.sh function2 8 ns
+cgroup_fj_function2_8_cpu run_cgroup_test_fj.sh function2 8 cpu
+cgroup_fj_function2_8_cpuacct run_cgroup_test_fj.sh function2 8 cpuacct
+cgroup_fj_function2_8_memory run_cgroup_test_fj.sh function2 8 memory
+cgroup_fj_function2_8_freezer run_cgroup_test_fj.sh function2 8 freezer
+cgroup_fj_function2_8_devices run_cgroup_test_fj.sh function2 8 devices
+cgroup_fj_function2_9_debug run_cgroup_test_fj.sh function2 9 debug
+cgroup_fj_function2_9_cpuset run_cgroup_test_fj.sh function2 9 cpuset
+cgroup_fj_function2_9_ns run_cgroup_test_fj.sh function2 9 ns
+cgroup_fj_function2_9_cpu run_cgroup_test_fj.sh function2 9 cpu
+cgroup_fj_function2_9_cpuacct run_cgroup_test_fj.sh function2 9 cpuacct
+cgroup_fj_function2_9_memory run_cgroup_test_fj.sh function2 9 memory
+cgroup_fj_function2_9_freezer run_cgroup_test_fj.sh function2 9 freezer
+cgroup_fj_function2_9_devices run_cgroup_test_fj.sh function2 9 devices
+cgroup_fj_function2_10_debug run_cgroup_test_fj.sh function2 10 debug
+cgroup_fj_function2_10_cpuset run_cgroup_test_fj.sh function2 10 cpuset
+cgroup_fj_function2_10_ns run_cgroup_test_fj.sh function2 10 ns
+cgroup_fj_function2_10_cpu run_cgroup_test_fj.sh function2 10 cpu
+cgroup_fj_function2_10_cpuacct run_cgroup_test_fj.sh function2 10 cpuacct
+cgroup_fj_function2_10_memory run_cgroup_test_fj.sh function2 10 memory
+cgroup_fj_function2_10_freezer run_cgroup_test_fj.sh function2 10 freezer
+cgroup_fj_function2_10_devices run_cgroup_test_fj.sh function2 10 devices
+cgroup_fj_function2_11_debug run_cgroup_test_fj.sh function2 11 debug
+cgroup_fj_function2_11_cpuset run_cgroup_test_fj.sh function2 11 cpuset
+cgroup_fj_function2_11_ns run_cgroup_test_fj.sh function2 11 ns
+cgroup_fj_function2_11_cpu run_cgroup_test_fj.sh function2 11 cpu
+cgroup_fj_function2_11_cpuacct run_cgroup_test_fj.sh function2 11 cpuacct
+cgroup_fj_function2_11_memory run_cgroup_test_fj.sh function2 11 memory
+cgroup_fj_function2_11_freezer run_cgroup_test_fj.sh function2 11 freezer
+cgroup_fj_function2_11_devices run_cgroup_test_fj.sh function2 11 devices
+cgroup_fj_function2_12_debug run_cgroup_test_fj.sh function2 12 debug
+cgroup_fj_function2_12_cpuset run_cgroup_test_fj.sh function2 12 cpuset
+cgroup_fj_function2_12_ns run_cgroup_test_fj.sh function2 12 ns
+cgroup_fj_function2_12_cpu run_cgroup_test_fj.sh function2 12 cpu
+cgroup_fj_function2_12_cpuacct run_cgroup_test_fj.sh function2 12 cpuacct
+cgroup_fj_function2_12_memory run_cgroup_test_fj.sh function2 12 memory
+cgroup_fj_function2_12_freezer run_cgroup_test_fj.sh function2 12 freezer
+cgroup_fj_function2_12_devices run_cgroup_test_fj.sh function2 12 devices
+cgroup_fj_function2_13_debug run_cgroup_test_fj.sh function2 13 debug
+cgroup_fj_function2_13_cpuset run_cgroup_test_fj.sh function2 13 cpuset
+cgroup_fj_function2_13_ns run_cgroup_test_fj.sh function2 13 ns
+cgroup_fj_function2_13_cpu run_cgroup_test_fj.sh function2 13 cpu
+cgroup_fj_function2_13_cpuacct run_cgroup_test_fj.sh function2 13 cpuacct
+cgroup_fj_function2_13_memory run_cgroup_test_fj.sh function2 13 memory
+cgroup_fj_function2_13_freezer run_cgroup_test_fj.sh function2 13 freezer
+cgroup_fj_function2_13_devices run_cgroup_test_fj.sh function2 13 devices
 cgroup_fj_stress_debug_100_1_1_1 run_cgroup_test_fj.sh stress debug 100 1 1 1
 cgroup_fj_stress_cpuset_100_1_1_1 run_cgroup_test_fj.sh stress cpuset 100 1 1 1
 cgroup_fj_stress_ns_100_1_1_1 run_cgroup_test_fj.sh stress ns 100 1 1 1
