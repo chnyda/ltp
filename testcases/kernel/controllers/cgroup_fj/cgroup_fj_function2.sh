@@ -39,7 +39,7 @@ no_debug=0
 usage()
 {
 	echo "usage of cgroup_fj_function2.sh: "
-	echo "  ./cgroup_fj_function2.sh -case number[1-13]"
+	echo "  ./cgroup_fj_function2.sh -cgroup -case number[1-9]"
 	echo "example: ./cgroup_fj_function2.sh 1"
 	echo "  will test the 1st case"
 }
@@ -109,21 +109,21 @@ case2()
 	done
 }
 
-case7()
+case3()
 {
 	do_mkdir 0 1 $mount_point/subgroup_2
 
 	do_mv 0 1 $mount_point/subgroup_1 $mount_point/subgroup_3
 }
 
-case8()
+case4()
 {
 	do_mkdir 0 1 $mount_point/subgroup_2
 
 	do_mv 0 0 $mount_point/subgroup_1 $mount_point/subgroup_2
 }
 
-case9()
+case5()
 {
 	mount_str="`mount -l | grep /dev/cgroup2`"
 	if [ "$mount_str" != "" ]; then
@@ -146,14 +146,14 @@ case9()
 	do_rmdir 0 1 /dev/cgroup2
 }
 
-case10()
+case6()
 {
 	do_mkdir 0 1 $mount_point/subgroup_2
 
 	do_mv 0 0 $mount_point/subgroup_1 $mount_point/tasks
 }
 
-case11()
+case7()
 {
 	do_echo 0 1 $pid $mount_point/subgroup_1/tasks
 
@@ -166,7 +166,7 @@ case11()
 	do_echo 1 1 $pid $mount_point/tasks
 }
 
-case12()
+case8()
 {
 	do_mkdir 0 1 $mount_point/subgroup_1/subgroup_1_1
 
@@ -177,13 +177,13 @@ case12()
 	do_rmdir 1 1 $mount_point/subgroup_1/subgroup_1_1
 }
 
-case13()
+case9()
 {
 	do_rmdir 0 1 $mount_point/subgroup_1
 }
 
 ##########################  main   #######################
-if [ "$#" -ne "2" ] || [ $caseno -lt 1 ] || [ $caseno -gt 13 ]; then
+if [ "$#" -ne "2" ] || [ $caseno -lt 1 ] || [ $caseno -gt 9 ]; then
 	usage;
 	exit_parameter;
 fi
@@ -193,20 +193,17 @@ mount_point=$(get_mount_point)
 
 setup;
 
-if [ $caseno -lt 3 ] || [ $caseno -gt 6 ]; then
-	if [ $mounted -ne 1 ]; then
-		mount_cgroup;
-	fi
-	$TESTROOT/cgroup_fj_proc &
-	pid=$!
-	mkdir_subgroup;
+if [ $mounted -ne 1 ]; then
+	mount_cgroup;
 fi
+$TESTROOT/cgroup_fj_proc &
+pid=$!
+mkdir_subgroup;
 
 case$caseno
 
 cleanup;
-if [ $caseno -lt 3 ] || [ $caseno -gt 6 ]; then
-	do_kill 1 1 9 $pid
-fi
+do_kill 1 1 9 $pid
+
 sleep 1
 exit 0;
