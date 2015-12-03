@@ -23,6 +23,7 @@
 #include "test.h"
 #include "safe_macros.h"
 #include "input_helper.h"
+#define VIRTUAL_DEVICE "virtual-device-ltp"
 
 #define VIRTUAL_DEVICE_REGEX "*virtual-device-ltp*"
 
@@ -42,23 +43,23 @@ int setup_read(void)
 	d = opendir("/dev/input");
 
 	while ((dp = readdir(d))) {
-		if (fnmatch("event[0-9]*", dp->d_name, 0) == 0) {
-			memset(path, 0, 256);
-			strcat(path, "/dev/input/");
-			strcat(path, dp->d_name);
-			fd = open(path, O_RDONLY);
-			if (fd < 0) {
-				tst_resm(TINFO, "failed to open %s", path);
-				break;
-			}
-			ret = ioctl(fd, EVIOCGNAME(256), name);
-			if (ret < 0) {
-				tst_resm(TINFO, "ioctl failed");
-				break;
-			}
-			if (strcmp(name, VIRTUAL_DEVICE) == 0)
-				break;
+		if (fnmatch("event[0-9]*", dp->d_name, 0))
+			continue;
+		snprintf(path, sizeof(path), "/dev/input/%s", dp->d_name);
+		fd = open(path, O_RDONLY);
+		if (fd < 0) {
+			tst_resm(TINFO, "failed to open %s", path);
+			break;
 		}
+		ret = ioctl(fd, EVIOCGNAME(256), name);
+		if (ret < 0) {
+			tst_resm(TINFO | TERRNO,
+				"ioctl(%s, EVIOCGNAME(256), ...) failed",
+				dp->d_name);
+			break;
+		}
+		if (strcmp(name, VIRTUAL_DEVICE) == 0)
+			break;
 	}
 
 	closedir(d);
@@ -79,8 +80,8 @@ int open_uinput(void)
 
 	if (fd < 0 && errno == ENOENT)
 		tst_brkm(TCONF, NULL, "unable to find and open uinput");
-	else if (fd < 0)
-		tst_brkm(TBROK, NULL, "open failed");
+	if (fd < 0)
+		tst_brkm(TERRNO, NULL, "open failed");
 
 	return fd;
 }
@@ -152,7 +153,7 @@ void destroy_device(int fd)
  * the device will be destroyed by the other process
  * after having sent the informations
 */
-int check_no_data(int fd)
+int check_no_data_and_close_fd(int fd)
 {
 	int rd;
 	struct input_event iev[64];

@@ -19,8 +19,6 @@
 #ifndef INPUT_HELPER_H
 #define INPUT_HELPER_H
 
-#define VIRTUAL_DEVICE "virtual-device-ltp"
-
 #include <sys/types.h>
 #include <dirent.h>
 
@@ -32,6 +30,6 @@ int open_uinput(void);
 void create_device(int fd);
 void setup_mouse_events(int fd);
 void destroy_device(int fd);
-int check_no_data(int fd);
+int check_no_data_and_close_fd(int fd);
 
 #endif /* INPUT_HELPER_H */

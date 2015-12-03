@@ -24,6 +24,7 @@
  */
 
 #include <linux/input.h>
+#include <linux/uinput.h>
 
 #include "test.h"
 #include "safe_macros.h"
@@ -61,7 +62,7 @@ int main(int ac, char **av)
 			send_information();
 			cleanup();
 		} else {
-			if (check_no_data(fd2))
+			if (check_no_data_and_close_fd(fd2))
 				tst_resm(TPASS, "No data received in eventX");
 			else
 				tst_resm(TFAIL, "Data received in eventX");

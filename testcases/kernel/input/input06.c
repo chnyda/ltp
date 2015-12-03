@@ -24,6 +24,7 @@
  */
 
 #include <linux/input.h>
+#include <linux/uinput.h>
 #include <linux/kd.h>
 
 #include "test.h"
