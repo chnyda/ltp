@@ -19,9 +19,8 @@
  /*
  *
  *  Create a virtual device (mouse), send events to /dev/uinput
- *  and check that the events are not received in /dev/input/eventX
- *  because it is not possible to sent such events
- *
+ *  and Check that events not advertised in the input device bits
+ *  are filtered.
  */
 
 #include <linux/input.h>

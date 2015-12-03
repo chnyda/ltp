@@ -31,8 +31,6 @@
 #include "input_helper.h"
 
 #define NB_TEST 100
-#define X_VALUE 0
-#define Y_VALUE 0
 
 static void setup(void);
 static void send_information(void);
