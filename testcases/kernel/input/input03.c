@@ -24,8 +24,6 @@
  */
 
 #include <linux/input.h>
-#include <linux/uinput.h>
-#include <fnmatch.h>
 
 #include "test.h"
 #include "safe_macros.h"
@@ -110,14 +108,13 @@ static int check_information(void)
 		rd = read(fd2, buf, 3);
 
 		if (rd < 3)
-			fail = 1;
-		if (buf[1] != X_VALUE || buf[2] != -Y_VALUE || buf[0] != 40)
-			fail = 1;
-		nb++;
+			break;
+		if (buf[1] == X_VALUE && buf[2] == -Y_VALUE && buf[0] == 40)
+			nb++;
 	}
 
 	SAFE_CLOSE(NULL, fd2);
-	return fail;
+	return nb != NB_TEST;
 }
 
 static void cleanup(void)

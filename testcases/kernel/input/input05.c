@@ -25,8 +25,6 @@
  */
 
 #include <linux/input.h>
-#include <linux/uinput.h>
-#include <fnmatch.h>
 
 #include "test.h"
 #include "safe_macros.h"

@@ -25,7 +25,6 @@
 
 #include <linux/input.h>
 #include <linux/uinput.h>
-#include <fnmatch.h>
 
 #include "input_helper.h"
 #include "test.h"
