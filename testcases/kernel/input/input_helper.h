@@ -22,7 +22,6 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-char *find_event(DIR *d, char *namedir1);
 int setup_read(void);
 void send_rel_move(int fd, int x, int y);
 void send_event(int fd, int event, int code, int value);

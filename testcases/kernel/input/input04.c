@@ -91,17 +91,35 @@ static void send_information(void)
 static int check_information(void)
 {
 	int rv;
+	int rd;
+	char buf[3];
 	struct timeval timeout;
 	fd_set set;
 
 	fd2 = SAFE_OPEN(NULL, "/dev/input/mice", O_RDWR);
-	FD_ZERO(&set);
-	FD_SET(fd2, &set);
-	timeout.tv_sec = 0;
-	timeout.tv_usec = 200000;
-	rv = select(fd2 + 1, &set, NULL, NULL, &timeout);
-	if (rv < 0)
-		tst_brkm(TBROK, NULL, "select failed");
+
+	do {
+		FD_ZERO(&set);
+		FD_SET(fd2, &set);
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 200000;
+		memset(buf, 0, 3);
+		rv = select(fd2 + 1, &set, NULL, NULL, &timeout);
+		if (rv < 0)
+			tst_brkm(TBROK, NULL, "select failed");
+
+		if (rv > 0) {
+			rd = read(fd2, buf, 3);
+
+			if (rd == 3 && buf[1] == 0
+				&& buf[2] == 0 && buf[0] == 40) {
+				tst_resm(TINFO, "Received empty movements");
+				rv = 1;
+				break;
+			}
+		}
+	} while (rv > 0);
+
 	SAFE_CLOSE(NULL, fd2);
 	return rv == 0;
 }
