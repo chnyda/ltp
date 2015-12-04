@@ -24,7 +24,6 @@
  */
 
 #include <linux/input.h>
-#include <linux/uinput.h>
 
 #include "input_helper.h"
 #include "test.h"
