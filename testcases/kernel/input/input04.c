@@ -38,7 +38,6 @@ static int check_information(void);
 static void cleanup(void);
 
 static int fd;
-static int fd2;
 
 char *TCID = "input04";
 
@@ -92,6 +91,7 @@ static int check_information(void)
 {
 	int rv;
 	int rd;
+	int fd2;
 	char buf[3];
 	struct timeval timeout;
 	fd_set set;

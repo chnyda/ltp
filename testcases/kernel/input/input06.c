@@ -40,7 +40,7 @@ static int check_information(void);
 static void cleanup(void);
 
 static int fd;
-static int caps;
+static int fd2;
 
 char *TCID = "input06";
 
@@ -55,11 +55,12 @@ int main(int ac, char **av)
 
 		setup();
 		pid = tst_fork();
+		fd2 = setup_read();
 
 		if (!pid) {
 			send_information();
 		} else {
-			if (check_information())
+			if (!check_information())
 				tst_resm(TFAIL,
 					"Wrong data received in eventX");
 			else
@@ -76,64 +77,72 @@ static void setup(void)
 	fd = open_uinput();
 
 	SAFE_IOCTL(NULL, fd, UI_SET_EVBIT, EV_KEY);
+	SAFE_IOCTL(NULL, fd, UI_SET_EVBIT, EV_REP);
 	SAFE_IOCTL(NULL, fd, UI_SET_KEYBIT, KEY_X);
-	SAFE_IOCTL(NULL, fd, UI_SET_KEYBIT, KEY_Y);
-	SAFE_IOCTL(NULL, fd, UI_SET_KEYBIT, KEY_ENTER);
 
 	create_device(fd);
+	send_event(fd, EV_REP, REP_DELAY, 25);
+	send_event(fd, EV_REP, REP_PERIOD, 25);
+
 }
 
 static void send_information(void)
 {
-	send_event(fd, EV_KEY, KEY_X, 10);
+	send_event(fd, EV_KEY, KEY_X, 1);
 	send_event(fd, EV_SYN, 0, 0);
 
 	/* sleep to keep the key pressed for some time (auto-repeat) */
-	sleep(1);
+	usleep(1000);
 
-	send_event(fd, EV_KEY, KEY_Y, 10);
-	send_event(fd, EV_KEY, KEY_ENTER, 10);
+	send_event(fd, EV_KEY, KEY_X, 0);
 	send_event(fd, EV_SYN, 0, 0);
 
 	cleanup();
 }
 
+static int check_event(struct input_event *iev, int event, int code, int value)
+{
+	return iev->type == event && iev->code == code && iev->value == value;
+}
+
 static int check_information(void)
 {
-	int rd;
+	struct input_event iev[64];
 	uint i;
-	char buf[128];
+	int nb;
+	int rd;
 
-	i = 1;
-	rd = read(STDIN_FILENO, buf, sizeof(buf));
-	if (rd < 1)
-		return 1;
+	i = 0;
+	nb = 0;
 
-	if (buf[0] == 'X')
-		caps = 32;
-	while (buf[i] != 'y' - caps) {
+	rd = read(fd2, iev, sizeof(iev));
 
-		if (buf[i] != 'x' - caps) {
-			tst_resm(TINFO, "Unexpected input %c expected %c",
-				buf[i], 'x' - caps);
-			return 1;
-		}
-
+	while (iev[i].type != EV_KEY)
 		i++;
+
+	if (check_event(&iev[i], EV_KEY, KEY_X, 1))
+		i = i + 1;
+
+	while (!check_event(&iev[i], EV_KEY, KEY_X, 0)) {
+
+		if (iev[i].type != EV_SYN && !check_event(&iev[i], EV_KEY, KEY_X, 2)) {
+			tst_resm(TINFO, "Didn't receive EV_KEY KEY_X with value 2");
+			break;
+		}
+		i++;
+		nb++;
+
+		if (i == rd / sizeof(struct input_event)) {
+			i = 0;
+			rd = read(fd2, iev, sizeof(iev));
+			if (rd < 0)
+				break;
+		}
 	}
 
-	if (i <= 1) {
-		tst_resm(TINFO, "autorepeat didn't work");
-		return 1;
-	}
+	SAFE_CLOSE(NULL, fd2);
 
-	if (i != strlen(buf) - 2) {
-		tst_resm(TINFO,
-			"the buffer is filled with unwanted chararacters");
-		return 1;
-	}
-
-	return 0;
+	return nb > 0 && check_event(&iev[i], EV_KEY, KEY_X, 0);
 }
 
 static void cleanup(void)
