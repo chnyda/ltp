@@ -108,6 +108,14 @@ static int check_bound(uint i, uint rd)
 	return i <= rd / sizeof(struct input_event);
 }
 
+static void check_size(int rd, int f)
+{
+	if (rd % sizeof(struct input_event) != 0) {
+		close(f);
+		tst_brkm(TBROK, NULL, "error while reading");
+	}
+}
+
 static int check_information(void)
 {
 	struct input_event iev[64];
@@ -120,11 +128,7 @@ static int check_information(void)
 
 	rd = read(fd2, iev, sizeof(iev));
 
-	if (rd % sizeof(struct input_event) != 0) {
-		tst_resm(TINFO, "error while reading");
-		close(fd2);
-		return 0;
-	}
+	check_size(rd, fd2);
 
 	if (check_bound(i, rd) && check_event(&iev[i], EV_KEY, KEY_X, 1))
 		i++;
@@ -143,10 +147,7 @@ static int check_information(void)
 		if (i == rd / sizeof(struct input_event)) {
 			i = 0;
 			rd = read(fd2, iev, sizeof(iev));
-			if (rd % sizeof(struct input_event) != 0) {
-				tst_resm(TINFO, "error while reading");
-				break;
-			}
+			check_size(rd, fd2);
 		}
 	}
 
